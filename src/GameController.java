@@ -2,6 +2,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 public class GameController {
     // Game components
@@ -10,7 +11,7 @@ public class GameController {
     private JTextField inputField;
     private JLabel scoreLabel;
     private JLabel livesLabel;
-    private JPanel gamePanel; // Changed from GamePanel to JPanel
+    private JPanel gamePanel; 
     
     // Game state
     private int score;
@@ -80,20 +81,18 @@ public class GameController {
     private void updateGame() {
         if (!gameRunning) return;
         
-        // Update all monsters
-        ArrayList<Monster> monstersToRemove = new ArrayList<>();
-        for (Monster monster : monsters) {
+        // Use an Iterator to safely remove monsters while iterating
+        Iterator<Monster> iterator = monsters.iterator();
+        while (iterator.hasNext()) {
+            Monster monster = iterator.next();
             monster.update();
             
             // Check if monster reached the base
             if (monster.getX() <= 0) {
-                monstersToRemove.add(monster);
+                iterator.remove(); // Safe removal using Iterator
                 decreaseLives();
             }
         }
-        
-        // Remove monsters that reached the base
-        monsters.removeAll(monstersToRemove);
     }
     
     private void checkInput() {
@@ -174,7 +173,7 @@ public class GameController {
         return livesLabel;
     }
     
-    public void setGamePanel(JPanel gamePanel) { // Changed from GamePanel to JPanel
+    public void setGamePanel(JPanel gamePanel) { 
         this.gamePanel = gamePanel;
     }
 }
