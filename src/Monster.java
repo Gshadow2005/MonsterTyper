@@ -1,14 +1,13 @@
 import java.awt.*;
 
 public class Monster {
-    private int x, y;
     private String word;
     private Color color;
     private double relativeX, relativeY;
     
     public Monster(int x, int y, String word) {
-        this.x = x;
-        this.y = y;
+        // this.x = x;
+        // this.y = y;
         this.word = word;
         this.color = new Color(
             Constants.RANDOM.nextInt(128) + 127, 
@@ -46,8 +45,8 @@ public class Monster {
                     realY + scaledSize / 2);
     }
     
-    public int getX() {
-        return x;
+    public int getX(int panelWidth) {
+        return (int) (relativeX * panelWidth);
     }
     
     public String getWord() {

@@ -3,7 +3,7 @@ import java.util.Random;
 public class Constants {
     // Game dimensions
     public static final int WIDTH = 800;
-    public static final int HEIGHT = 600;
+    public static final int HEIGHT = 700;
     
     // Monster properties
     public static final int MONSTER_SIZE = 40;

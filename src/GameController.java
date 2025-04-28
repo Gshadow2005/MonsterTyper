@@ -90,7 +90,7 @@ public class GameController {
             monster.update(panelWidth);
             
             // Check if monster reached the base
-            if (monster.getX() <= 0) {
+            if (monster.getX(panelWidth) <= 0) {
                 iterator.remove(); // Safe removal using Iterator
                 decreaseLives();
             }
