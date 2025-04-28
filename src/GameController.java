@@ -80,12 +80,14 @@ public class GameController {
     
     private void updateGame() {
         if (!gameRunning) return;
+
+        int panelWidth = gamePanel.getWidth();
         
         // Use an Iterator to safely remove monsters while iterating
         Iterator<Monster> iterator = monsters.iterator();
         while (iterator.hasNext()) {
             Monster monster = iterator.next();
-            monster.update();
+            monster.update(panelWidth);
             
             // Check if monster reached the base
             if (monster.getX() <= 0) {

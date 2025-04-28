@@ -15,14 +15,19 @@ public class GamePanel extends JPanel {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         
+        int height = getHeight();
+
         // Draw base (left side)
         g.setColor(Color.BLUE);
-        g.fillRect(0, 0, 5, Constants.HEIGHT);
+        g.fillRect(0, 0, 5, height);
         
+
+        int panelWidth = getWidth();
+        int panelHeight = getHeight();
         // Draw monsters
         ArrayList<Monster> monsters = gameController.getMonsters();
         for (Monster monster : monsters) {
-            monster.draw(g);
+            monster.draw(g, panelWidth, panelHeight);
         }
     }
 }

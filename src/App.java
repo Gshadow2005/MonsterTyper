@@ -6,7 +6,7 @@ public class App extends JFrame {
         setTitle("Monster Typer");
         setSize(Constants.WIDTH, Constants.HEIGHT);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setResizable(false);
+        setResizable(true);
         setLocationRelativeTo(null);
         
         // Create the game controller
