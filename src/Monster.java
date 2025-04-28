@@ -1,13 +1,12 @@
 import java.awt.*;
 
 public class Monster {
-    private int x;
     private String word;
     private Color color;
     private double relativeX, relativeY;
     
     public Monster(int x, int y, String word) {
-        this.x = x;
+        // this.x = x;
         // this.y = y;
         this.word = word;
         this.color = new Color(
