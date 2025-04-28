@@ -20,8 +20,9 @@ public class Monster {
     }
     
     public void update(int panelWidth) {
-        double moveAmount = Constants.MONSTER_SPEED / (double) panelWidth;
-        relativeX -= moveAmount;   
+        double pixelsToMove = Constants.MONSTER_SPEED;
+        double moveAmount = pixelsToMove / Constants.WIDTH;
+        relativeX -= moveAmount;
     }
     
     public void draw(Graphics g, int panelWidth, int panelHeight) {

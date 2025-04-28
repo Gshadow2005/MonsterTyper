@@ -6,6 +6,7 @@ public class App extends JFrame {
         setTitle("Monster Typer");
         setSize(Constants.WIDTH, Constants.HEIGHT);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setMinimumSize(new Dimension(800, 700));
         setResizable(true);
         setLocationRelativeTo(null);
         
