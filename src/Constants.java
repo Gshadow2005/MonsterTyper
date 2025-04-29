@@ -14,12 +14,15 @@ public class Constants {
     
     // Monster properties
     public static final int MONSTER_SIZE = 50;
-    public static final int MONSTER_SPEED = 1;
+    public static final double MONSTER_INITIAL_SPEED = 0.5;
+    public static final double MONSTER_MAX_SPEED = 3.0;
+
+    public static double currentMonsterSpeed = MONSTER_INITIAL_SPEED;
     
     // Game settings
     public static final int INITIAL_LIVES = 5;
     public static final int SCORE_PER_MONSTER = 10;
-    public static final int SPAWN_CHANCE = 2; // percent chance per frame
+    public static final int SPAWN_CHANCE = 1; // percent chance per frame
     
     // Word list for monsters
     public static String[] WORDS = loadWordsFromFile("assets/words.txt");
