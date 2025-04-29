@@ -51,30 +51,32 @@ public class GameController {
         if (gameTimer != null) {
             gameTimer.stop();
         }
-        
+
         if (gameTimer != null) {
             resetGame();
         }
-        
-        // Set game as running
+
         gameRunning = true;
-        
-        // Create and start new game timer
+
         gameTimer = new Timer(16, e -> {
             updateGame();
             if (gamePanel != null) {
                 gamePanel.repaint();
             }
-            
+
             if (Constants.RANDOM.nextInt(100) < Constants.SPAWN_CHANCE) {
                 spawnMonster();
             }
         });
         
         gameTimer.start();
-        
+
         if (inputField != null) {
             inputField.setText("");
+        }
+
+        if (clearInputTimer == null) {
+            setupClearInputTimer();
         }
         spawnMonster();
     }
@@ -114,8 +116,7 @@ public class GameController {
         
         String input = inputField.getText().trim().toLowerCase();
         if (input.isEmpty()) return;
-        
-        // Check if input matches any monster's word
+
         Monster monsterToRemove = null;
         for (Monster monster : monsters) {
             if (input.equals(monster.getWord().toLowerCase())) {
@@ -123,12 +124,17 @@ public class GameController {
                 break;
             }
         }
-        
-        // Remove matched monster and update score
+
         if (monsterToRemove != null) {
             monsters.remove(monsterToRemove);
             increaseScore();
             inputField.setText("");
+        } else {
+            if (clearInputTimer.isRunning()) {
+                clearInputTimer.restart(); 
+            } else {
+                clearInputTimer.start(); 
+            }
         }
     }
     
@@ -151,14 +157,37 @@ public class GameController {
         gameRunning = false;
         gameTimer.stop();
         
-        JOptionPane.showMessageDialog(gamePanel, 
-            "Game Over!\nYour score: " + score, 
+        // Show game over 
+        int option = JOptionPane.showConfirmDialog(gamePanel, 
+            "Game Over!\nYour score: " + score + "\n\nPlay again?", 
             "Monster Typer", 
+            JOptionPane.YES_NO_OPTION,
             JOptionPane.INFORMATION_MESSAGE);
         
-        // Reset game
-        resetGame();
+        if (option == JOptionPane.YES_OPTION) {
+            resetGame();
+            startGame();
+        } else {
+            resetGame();
+            fireGameOverEvent();
+        }
     }
+
+    public interface GameEventListener {
+        void onGameOver();
+    }
+    
+    private GameEventListener gameEventListener;
+    
+    public void setGameEventListener(GameEventListener listener) {
+        this.gameEventListener = listener;
+    }
+    
+    private void fireGameOverEvent() {
+        if (gameEventListener != null) {
+            gameEventListener.onGameOver();
+        }
+    }    
     
     public void resetGame() {
         monsters.clear();
@@ -171,6 +200,16 @@ public class GameController {
             gameTimer.stop(); 
         }
     }
+
+    private Timer clearInputTimer;
+
+    private void setupClearInputTimer() {
+        clearInputTimer = new Timer(1500, e -> {
+            inputField.setText("");
+            ((Timer)e.getSource()).stop(); // Stop the timer after clearing
+        });
+        clearInputTimer.setRepeats(false); // Only fire once
+    }    
 
     public void stopGame() {
         if (gameTimer != null) {

@@ -1,7 +1,7 @@
 import javax.swing.*;
 import java.awt.*;
 
-public class App extends JFrame {
+public class App extends JFrame implements GameController.GameEventListener {
     private CardLayout cardLayout;
     private JPanel mainPanel;
     private MainMenu mainMenu;
@@ -41,6 +41,8 @@ public class App extends JFrame {
         // First time setup of game components
         if (gameController == null) {
             gameController = new GameController();
+
+            gameController.setGameEventListener(this);
             
             // Create and set up game panels
             GamePanel gamePanel = new GamePanel(gameController);
@@ -89,6 +91,11 @@ public class App extends JFrame {
         
         // Switch to menu screen
         cardLayout.show(mainPanel, "MENU");
+    }
+    
+    @Override
+    public void onGameOver() {
+        returnToMenu();
     }
     
     public static void main(String[] args) {
