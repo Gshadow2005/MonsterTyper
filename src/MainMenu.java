@@ -80,18 +80,31 @@ public class MainMenu extends JPanel {
         
         button.setPreferredSize(new Dimension(150, 40));
 
+        final String originalText = text;
+        final Timer[] glitchTextTimer = {null};
+        final Timer[] glitchColorTimer = {null};
+
         button.addMouseListener(new MouseAdapter() {
             private Timer hoverTimer;
             private Timer exitTimer;
             private final int ANIMATION_DURATION = 200; 
-            private final int ANIMATION_STEPS = 10;   
+            private final int ANIMATION_STEPS = 10;
             
             @Override
             public void mouseEntered(MouseEvent evt) {
                 if (exitTimer != null && exitTimer.isRunning()) {
                     exitTimer.stop();
                 }
+                
+                if (glitchTextTimer[0] != null) {
+                    glitchTextTimer[0].stop();
+                }
+                
+                if (glitchColorTimer[0] != null) {
+                    glitchColorTimer[0].stop();
+                }
 
+                // Start color transition animation
                 final Color startColor = button.getBackground();
                 final Color targetColor = BUTTON_HOVER_COLOR;
                 
@@ -107,6 +120,9 @@ public class MainMenu extends JPanel {
                     } else {
                         button.setBackground(targetColor);
                         hoverTimer.stop();
+                        
+                        // Start glitch effects after color transition completes
+                        startGlitchEffects(button, originalText);
                     }
                 });
                 
@@ -115,6 +131,14 @@ public class MainMenu extends JPanel {
             
             @Override
             public void mouseExited(MouseEvent evt) {
+                if (glitchTextTimer[0] != null) {
+                    glitchTextTimer[0].stop();
+                }
+                if (glitchColorTimer[0] != null) {
+                    glitchColorTimer[0].stop();
+                }
+                button.setText(originalText);
+                
                 if (hoverTimer != null && hoverTimer.isRunning()) {
                     hoverTimer.stop();
                 }
@@ -128,7 +152,6 @@ public class MainMenu extends JPanel {
                 exitTimer.addActionListener(e -> {
                     step[0]++;
                     if (step[0] <= ANIMATION_STEPS) {
-
                         float ratio = (float) step[0] / ANIMATION_STEPS;
                         Color newColor = interpolateColor(startColor, targetColor, ratio);
                         button.setBackground(newColor);
@@ -141,6 +164,61 @@ public class MainMenu extends JPanel {
                 exitTimer.start();
             }
 
+            private void startGlitchEffects(JButton button, String originalText) {
+
+                glitchTextTimer[0] = new Timer(100, null);
+                glitchTextTimer[0].addActionListener(e -> {
+
+                    if (Math.random() < 0.4) {
+                        button.setText(createGlitchedText(originalText));
+                    } else {
+                        button.setText(originalText);
+                    }
+                });
+                glitchTextTimer[0].start();
+                glitchColorTimer[0] = new Timer(150, null);
+                glitchColorTimer[0].addActionListener(e -> {
+
+                    if (Math.random() < 0.10) {
+                        Color glitchColor = new Color(
+                            Math.min(255, BUTTON_HOVER_COLOR.getRed() + 50),
+                            BUTTON_HOVER_COLOR.getGreen(),
+                            BUTTON_HOVER_COLOR.getBlue()
+                        );
+                        button.setBackground(glitchColor);
+
+                        Timer resetTimer = new Timer(50, event -> {
+                            button.setBackground(BUTTON_HOVER_COLOR);
+                        });
+                        resetTimer.setRepeats(false);
+                        resetTimer.start();
+                    }
+                });
+                glitchColorTimer[0].start();
+            }
+
+            private String createGlitchedText(String originalText) {
+                StringBuilder glitched = new StringBuilder(originalText);
+                int numGlitches = 1 + (int)(Math.random() * 2);
+                
+                for (int i = 0; i < numGlitches; i++) {
+                    if (glitched.length() == 0) break;
+                    
+                    int pos = (int)(Math.random() * glitched.length());
+                    char glitchChar;
+
+                    String glitchChars = "!@#$%oten^&*<>|/\\";
+                    if (Math.random() < 0.9) {
+                        glitchChar = glitchChars.charAt((int)(Math.random() * glitchChars.length()));
+                    } else {
+                        char original = glitched.charAt(pos);
+                        glitchChar = (char)(original + (-5 + (int)(Math.random() * 10)));
+                    }
+                    
+                    glitched.setCharAt(pos, glitchChar);
+                }
+                return glitched.toString();
+            }
             private Color interpolateColor(Color start, Color end, float ratio) {
                 int r = Math.round(start.getRed() + ratio * (end.getRed() - start.getRed()));
                 int g = Math.round(start.getGreen() + ratio * (end.getGreen() - start.getGreen()));
