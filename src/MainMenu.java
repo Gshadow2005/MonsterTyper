@@ -1,6 +1,8 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.net.URL;
@@ -9,14 +11,18 @@ public class MainMenu extends JPanel {
     private JButton playButton;
     private JButton exitButton;
     private ImageIcon logoGif;
+
+    private static final Color BACKGROUND_COLOR = new Color(10, 10, 20);
+    private static final Color BUTTON_COLOR = new Color(80, 80, 200);
+    private static final Color BUTTON_HOVER_COLOR = new Color(100, 100, 220);
     
     public MainMenu(ActionListener playAction) {
         setLayout(new BorderLayout());
-        setBackground(new Color(20, 20, 40)); 
+        setBackground(BACKGROUND_COLOR); 
 
         JPanel centerPanel = new JPanel();
         centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
-        centerPanel.setBackground(new Color(20, 20, 40));
+        centerPanel.setBackground(BACKGROUND_COLOR);
 
         logoGif = loadLogoGif();
         JLabel logoLabel = new JLabel(logoGif);
@@ -30,7 +36,7 @@ public class MainMenu extends JPanel {
         // Button panel
         JPanel buttonPanel = new JPanel();
         buttonPanel.setLayout(new GridLayout(2, 1, 0, 10));
-        buttonPanel.setBackground(new Color(20, 20, 40));
+        buttonPanel.setBackground(BACKGROUND_COLOR);
         buttonPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 0));
         buttonPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
         buttonPanel.setMaximumSize(new Dimension(150, 100));
@@ -62,24 +68,82 @@ public class MainMenu extends JPanel {
     private JButton createMenuButton(String text) {
         JButton button = new JButton(text);
         button.setFont(new Font("Arial", Font.BOLD, 16));
-        button.setBackground(new Color(80, 80, 200));
+        button.setBackground(BUTTON_COLOR);
         button.setForeground(Color.WHITE);
         button.setFocusPainted(false);
         button.setBorderPainted(true);
         button.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(100, 100, 220), 2),
+            BorderFactory.createLineBorder(BUTTON_HOVER_COLOR, 2),
             BorderFactory.createEmptyBorder(5, 15, 5, 15)
         ));
         button.setPreferredSize(new Dimension(150, 40));
-        
-        // Add hover effect
-        button.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseEntered(java.awt.event.MouseEvent evt) {
-                button.setBackground(new Color(100, 100, 220));
+
+        button.addMouseListener(new MouseAdapter() {
+            private Timer hoverTimer;
+            private Timer exitTimer;
+            private final int ANIMATION_DURATION = 200; 
+            private final int ANIMATION_STEPS = 10;   
+            
+            @Override
+            public void mouseEntered(MouseEvent evt) {
+                if (exitTimer != null && exitTimer.isRunning()) {
+                    exitTimer.stop();
+                }
+
+                final Color startColor = button.getBackground();
+                final Color targetColor = BUTTON_HOVER_COLOR;
+                
+                hoverTimer = new Timer(ANIMATION_DURATION / ANIMATION_STEPS, null);
+                final int[] step = {0};
+                
+                hoverTimer.addActionListener(e -> {
+                    step[0]++;
+                    if (step[0] <= ANIMATION_STEPS) {
+                        float ratio = (float) step[0] / ANIMATION_STEPS;
+                        Color newColor = interpolateColor(startColor, targetColor, ratio);
+                        button.setBackground(newColor);
+                    } else {
+                        button.setBackground(targetColor);
+                        hoverTimer.stop();
+                    }
+                });
+                
+                hoverTimer.start();
             }
             
-            public void mouseExited(java.awt.event.MouseEvent evt) {
-                button.setBackground(new Color(80, 80, 200));
+            @Override
+            public void mouseExited(MouseEvent evt) {
+                if (hoverTimer != null && hoverTimer.isRunning()) {
+                    hoverTimer.stop();
+                }
+
+                final Color startColor = button.getBackground();
+                final Color targetColor = BUTTON_COLOR;
+                
+                exitTimer = new Timer(ANIMATION_DURATION / ANIMATION_STEPS, null);
+                final int[] step = {0};
+                
+                exitTimer.addActionListener(e -> {
+                    step[0]++;
+                    if (step[0] <= ANIMATION_STEPS) {
+
+                        float ratio = (float) step[0] / ANIMATION_STEPS;
+                        Color newColor = interpolateColor(startColor, targetColor, ratio);
+                        button.setBackground(newColor);
+                    } else {
+                        button.setBackground(targetColor);
+                        exitTimer.stop();
+                    }
+                });
+                
+                exitTimer.start();
+            }
+
+            private Color interpolateColor(Color start, Color end, float ratio) {
+                int r = Math.round(start.getRed() + ratio * (end.getRed() - start.getRed()));
+                int g = Math.round(start.getGreen() + ratio * (end.getGreen() - start.getGreen()));
+                int b = Math.round(start.getBlue() + ratio * (end.getBlue() - start.getBlue()));
+                return new Color(r, g, b);
             }
         });
         
@@ -87,21 +151,18 @@ public class MainMenu extends JPanel {
     }
     
     private ImageIcon loadLogoGif() {
-        // First try to load from assets folder as a resource
         URL gifUrl = getClass().getResource("/assets/logo.gif");
         
         if (gifUrl != null) {
             return new ImageIcon(gifUrl);
         }
         
-        // If not found as a resource, try loading from file system
         try {
             File file = new File("assets/logo.gif");
             if (file.exists()) {
                 return new ImageIcon(file.getAbsolutePath());
             }
         } catch (Exception e) {
-            // Ignore this attempt
         }
 
         System.out.println("logo.gif not found in assets folder");
