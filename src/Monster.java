@@ -34,21 +34,35 @@ public class Monster {
         int realY = (int) (relativeY * panelHeight);
         int scaledSize = (int) (Constants.MONSTER_SIZE * Math.min(panelWidth / (double) Constants.WIDTH, panelHeight / (double) Constants.HEIGHT));
 
+        // Original transform
         AffineTransform oldTransform = g2d.getTransform();
+
+        // Flip the image horizontally
         g2d.translate(realX + scaledSize, realY);
         g2d.scale(-1, 1); 
-
-        // Draw monster body
         g2d.drawImage(MONSTER_IMAGE, 0, 0, scaledSize, scaledSize, null);
+
+        // Restore transform for drawing text and health bar
         g2d.setTransform(oldTransform);
+
+        // Draw Health Bar
+        int healthBarHeight = 3;
+        int healthBarWidth = scaledSize - 5;
+        int healthBarX = realX;
+        int healthBarY = realY - 10;
+
+        g.setColor(Color.RED);
+        g.fillRect(healthBarX, healthBarY, healthBarWidth, healthBarHeight);
         
         // Draw word
         g.setColor(Color.WHITE);
         g.setFont(new Font("Arial", Font.BOLD, 12));
         FontMetrics fm = g.getFontMetrics();
         int textWidth = fm.stringWidth(word);
-        g.drawString(word, realX + (scaledSize - textWidth) / 2, 
-                    realY + scaledSize / 2);
+        int textX = realX + (scaledSize - textWidth) / 2;
+        int textY = realY + scaledSize + fm.getAscent();
+
+        g.drawString(word, textX, textY);
     }
     
     public int getX(int panelWidth) {
