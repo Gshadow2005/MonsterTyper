@@ -1,3 +1,10 @@
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 public class Constants {
@@ -15,11 +22,43 @@ public class Constants {
     public static final int SPAWN_CHANCE = 2; // percent chance per frame
     
     // Word list for monsters
-    public static final String[] WORDS = {"Tree", "Bird", "Snow", "Infinite", "Nebula", "Enigma", "Sand", 
-                                            "Leaf", "Wanderlust", "Labyrinth", "Grass", "core", "music", "ocean", "moon", "star", "sun", "sky", "cloud", 
-                                            "rain", "wind", "fire", "earth", "water", "lightning", "shadow", "dream", "whisper", "echo", "pulse", "wave", "spark"};
-                                        
+    public static String[] WORDS = loadWordsFromFile("assets/words.txt");
     
     // Random generator for the game
     public static final Random RANDOM = new Random();
+
+    private static String[] loadWordsFromFile(String filePath) {
+        List<String> wordList = new ArrayList<>();
+        
+        try {
+            try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    line = line.trim();
+                    if (!line.isEmpty()) {
+                        wordList.add(line);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            try {
+                InputStream inputStream = Constants.class.getClassLoader().getResourceAsStream(filePath);
+                
+                if (inputStream != null) {
+                    try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            line = line.trim();
+                            if (!line.isEmpty()) {
+                                wordList.add(line);
+                            }
+                        }
+                    }
+                }
+            } catch (IOException ex) {
+                System.err.println("Error loading words from resources: " + ex.getMessage());
+            }
+        }       
+        return wordList.toArray(new String[0]);
+    }
 }

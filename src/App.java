@@ -35,6 +35,13 @@ public class App extends JFrame implements GameController.GameEventListener {
         
         // Add main panel to frame
         add(mainPanel);
+
+        if (Constants.WORDS.length == 0) {
+            JOptionPane.showMessageDialog(this, 
+                "Failed to load words from file. Please check if 'assets/words.txt' exists.", 
+                "Error Loading Words", 
+                JOptionPane.ERROR_MESSAGE);
+        }
     }
     
     private void startGame() {
