@@ -13,7 +13,7 @@ public class GameController {
     private JLabel scoreLabel;
     private JLabel livesLabel;
     private JPanel gamePanel;
-    private Timer jamTimer; // Timer for keyboard jamming effect
+    private Timer jamTimer; 
     
     // Game state
     private int score;
@@ -114,7 +114,10 @@ public class GameController {
         // Random chance to spawn a monster with keyboard jam power
         boolean hasJamPower = Constants.RANDOM.nextInt(100) < Constants.JAM_POWER_CHANCE;
         
-        monsters.add(new Monster(x, y, word, hasJamPower));
+        // Create monster with the jam power flag
+        Monster monster = new Monster(x, y, word, hasJamPower);
+        // Extra life flag is already being set inside the Monster constructor
+        monsters.add(monster);
     }
     
     private void updateGame() {
@@ -153,6 +156,9 @@ public class GameController {
                 // Check if monster has keyboard jam power
                 if (monster.hasJamPower()) {
                     startKeyboardJam();
+                }
+                if (monster.hasExtraLife()) {
+                    increaseLife();
                 }
                 break;
             }
@@ -209,11 +215,35 @@ public class GameController {
         }
     }
     
+    private void increaseLife() {
+        lives++;
+        
+        if (livesLabel != null) {
+            livesLabel.setText("Lives: " + lives);
+            livesLabel.setForeground(Color.GREEN);
+
+            Timer colorTimer = new Timer(500, e -> {
+                livesLabel.setForeground(Color.WHITE);
+                ((Timer)e.getSource()).stop();
+            });
+            colorTimer.setRepeats(false);
+            colorTimer.start();
+        }
+    }
+    
     private void decreaseLives() {
         lives--;
         
         if (livesLabel != null) {
             livesLabel.setText("Lives: " + lives);
+            livesLabel.setForeground(Color.RED);
+
+            Timer colorTimer = new Timer(500, e -> {
+                livesLabel.setForeground(Color.WHITE);
+                ((Timer)e.getSource()).stop();
+            });
+            colorTimer.setRepeats(false);
+            colorTimer.start();
         }
         
         // Check for game over
@@ -271,6 +301,7 @@ public class GameController {
         
         if (livesLabel != null) {
             livesLabel.setText("Lives: " + lives);
+            livesLabel.setForeground(Color.WHITE); 
         }
         
         gameRunning = true;
