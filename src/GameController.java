@@ -8,24 +8,40 @@ public class GameController {
     // Game components
     private CopyOnWriteArrayList<Monster> monsters;
     private Timer gameTimer;
+    private Timer clearInputTimer;
     private JTextField inputField;
     private JLabel scoreLabel;
     private JLabel livesLabel;
-    private JPanel gamePanel; 
+    private JPanel gamePanel;
+    private Timer jamTimer; // Timer for keyboard jamming effect
     
     // Game state
     private int score;
     private int lives;
     private boolean gameRunning;
+    private boolean isKeyboardJammed;
+    private long jamEndTime;
     
     public GameController() {
         monsters = new CopyOnWriteArrayList<>(); 
         score = 0;
         lives = Constants.INITIAL_LIVES;
         gameRunning = true;
+        isKeyboardJammed = false;
         
         // Initialize UI components
         initializeComponents();
+        
+        // Initialize clearInputTimer
+        setupClearInputTimer();
+        
+        // Timer for checking jam status
+        jamTimer = new Timer(100, e -> {
+            if (isKeyboardJammed && System.currentTimeMillis() > jamEndTime) {
+                endKeyboardJam();
+            }
+        });
+        jamTimer.start();
     }
     
     private void initializeComponents() {
@@ -41,9 +57,22 @@ public class GameController {
         inputField.addKeyListener(new KeyAdapter() {
             @Override
             public void keyReleased(KeyEvent e) {
-                checkInput();
+                if (!isKeyboardJammed) {
+                    checkInput();
+                } else {
+                    // Clear input while jammed
+                    inputField.setText("");
+                }
             }
         });
+    }
+    
+    private void setupClearInputTimer() {
+        clearInputTimer = new Timer(1500, e -> {
+            inputField.setText("");
+            ((Timer)e.getSource()).stop(); 
+        });
+        clearInputTimer.setRepeats(false);
     }
     
     public void startGame() {
@@ -51,10 +80,7 @@ public class GameController {
             gameTimer.stop();
         }
 
-        if (gameTimer != null) {
-            resetGame();
-        }
-
+        resetGame();
         gameRunning = true;
 
         gameTimer = new Timer(16, e -> {
@@ -74,9 +100,6 @@ public class GameController {
             inputField.setText("");
         }
 
-        if (clearInputTimer == null) {
-            setupClearInputTimer();
-        }
         spawnMonster();
     }
     
@@ -88,11 +111,14 @@ public class GameController {
         int x = Constants.WIDTH - Constants.MONSTER_SIZE;
         int y = Constants.RANDOM.nextInt(Constants.HEIGHT - 100 - Constants.MONSTER_SIZE);
         
-        monsters.add(new Monster(x, y, word));
+        // Random chance to spawn a monster with keyboard jam power
+        boolean hasJamPower = Constants.RANDOM.nextInt(100) < Constants.JAM_POWER_CHANCE;
+        
+        monsters.add(new Monster(x, y, word, hasJamPower));
     }
     
     private void updateGame() {
-        if (!gameRunning) return;
+        if (!gameRunning || gamePanel == null) return;
 
         int panelWidth = gamePanel.getWidth();
 
@@ -115,7 +141,7 @@ public class GameController {
     }
     
     private void checkInput() {
-        if (!gameRunning) return;
+        if (!gameRunning || isKeyboardJammed || inputField == null) return;
         
         String input = inputField.getText().trim().toLowerCase();
         if (input.isEmpty()) return;
@@ -124,6 +150,10 @@ public class GameController {
         for (Monster monster : monsters) {
             if (input.equals(monster.getWord().toLowerCase())) {
                 monsterToRemove = monster;
+                // Check if monster has keyboard jam power
+                if (monster.hasJamPower()) {
+                    startKeyboardJam();
+                }
                 break;
             }
         }
@@ -142,21 +172,48 @@ public class GameController {
     }
 
     public void increaseMonsterSpeed() {
-        Constants.currentMonsterSpeed += 0.01;
+        Constants.currentMonsterSpeed += 0.1;
         if (Constants.currentMonsterSpeed > Constants.MONSTER_MAX_SPEED) {
             Constants.currentMonsterSpeed = Constants.MONSTER_MAX_SPEED;
+        }
+    }
+    
+    // Add the missing methods for keyboard jam functionality
+    private void startKeyboardJam() {
+        isKeyboardJammed = true;
+        jamEndTime = System.currentTimeMillis() + Constants.JAM_DURATION;
+        
+        if (inputField != null) {
+            inputField.setEnabled(false);
+            inputField.setBackground(new Color(255, 200, 200));
+        }
+    }
+    
+    private void endKeyboardJam() {
+        isKeyboardJammed = false;
+        
+        if (inputField != null) {
+            inputField.setEnabled(true);
+            inputField.setBackground(Color.WHITE);
+            inputField.setText("");
         }
     }
     
     private void increaseScore() {
         score += Constants.SCORE_PER_MONSTER;
         increaseMonsterSpeed();
-        scoreLabel.setText("Score: " + score);
+        
+        if (scoreLabel != null) {
+            scoreLabel.setText("Score: " + score);
+        }
     }
     
     private void decreaseLives() {
         lives--;
-        livesLabel.setText("Lives: " + lives);
+        
+        if (livesLabel != null) {
+            livesLabel.setText("Lives: " + lives);
+        }
         
         // Check for game over
         if (lives <= 0) {
@@ -166,7 +223,10 @@ public class GameController {
     
     private void gameOver() {
         gameRunning = false;
-        gameTimer.stop();
+        
+        if (gameTimer != null) {
+            gameTimer.stop();
+        }
 
         int option = JOptionPane.showConfirmDialog(gamePanel, 
             "Game Over!\nYour score: " + score + "\n\nPlay again?", 
@@ -203,23 +263,24 @@ public class GameController {
         monsters.clear();
         score = 0;
         lives = Constants.INITIAL_LIVES;
-        scoreLabel.setText("Score: " + score);
-        livesLabel.setText("Lives: " + lives);
+        
+        if (scoreLabel != null) {
+            scoreLabel.setText("Score: " + score);
+        }
+        
+        if (livesLabel != null) {
+            livesLabel.setText("Lives: " + lives);
+        }
+        
         gameRunning = true;
+        
         if (gameTimer != null) {
             gameTimer.stop(); 
         }
+        
+        // Reset monster speed
+        Constants.currentMonsterSpeed = Constants.MONSTER_INITIAL_SPEED;
     }
-
-    private Timer clearInputTimer;
-
-    private void setupClearInputTimer() {
-        clearInputTimer = new Timer(1500, e -> {
-            inputField.setText("");
-            ((Timer)e.getSource()).stop(); 
-        });
-        clearInputTimer.setRepeats(false);
-    }    
 
     public void stopGame() {
         if (gameTimer != null) {
@@ -232,6 +293,13 @@ public class GameController {
         if (gameRunning && gameTimer != null) {
             gameTimer.stop();
             gameRunning = false;
+        }
+    }
+
+    public void resumeGame() {
+        if (!gameRunning && gameTimer != null) {
+            gameTimer.start();
+            gameRunning = true;
         }
     }
     
@@ -254,5 +322,13 @@ public class GameController {
     
     public void setGamePanel(JPanel gamePanel) { 
         this.gamePanel = gamePanel;
+    }
+    
+    public boolean isKeyboardJammed() {
+        return isKeyboardJammed;
+    }
+    
+    public boolean isGameRunning() {
+        return gameRunning;
     }
 }

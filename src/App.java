@@ -103,7 +103,8 @@ public class App extends JFrame implements GameController.GameEventListener {
     
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            new App().setVisible(true);
+            App app = new App();
+            app.setVisible(true);
         });
     }
 }
