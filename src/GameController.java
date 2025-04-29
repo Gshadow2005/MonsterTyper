@@ -241,7 +241,7 @@ public class GameController {
     }
     
     // Input scrambling functionality
-    private void startInputScramble() {
+    public void startInputScramble() {
         isInputScrambled = true;
         scrambleEndTime = System.currentTimeMillis() + Constants.SCRAMBLE_DURATION;
 
@@ -279,7 +279,7 @@ public class GameController {
     }
     
     // Keyboard jam functionality
-    private void startKeyboardJam() {
+    public void startKeyboardJam() {
         isKeyboardJammed = true;
         jamEndTime = System.currentTimeMillis() + Constants.JAM_DURATION;
         
@@ -300,7 +300,7 @@ public class GameController {
         }
     }
     
-    private void increaseScore() {
+    public void increaseScore() {
         score += Constants.SCORE_PER_MONSTER;
         increaseMonsterSpeed();
         
@@ -310,7 +310,7 @@ public class GameController {
     }
     
     // Handling gaining an extra life 
-    private void increaseLife() {
+    public void increaseLife() {
         lives++;
         
         if (livesLabel != null) {
