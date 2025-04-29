@@ -15,8 +15,11 @@ public class Constants {
     public static final int MONSTER_SIZE = 50;
     public static final double MONSTER_INITIAL_SPEED = 0.5;
     public static final double MONSTER_MAX_SPEED = 3.0;
-    public static final int JAM_POWER_CHANCE = 20; // Example value
-    public static final long JAM_DURATION = 5000; // Duration in milliseconds
+    public static final int JAM_POWER_CHANCE = 20; 
+    public static final long JAM_DURATION = 3000; 
+    public static final int REVERSE_POWER_CHANCE = 15;
+    public static final int SPLIT_CHANCE = 10; 
+    public static final int REVERSE_DURATION = 3000;
 
     public static double currentMonsterSpeed = MONSTER_INITIAL_SPEED;
     
