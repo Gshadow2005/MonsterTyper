@@ -2,6 +2,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Random;
 
 public class GameController {
     // Game components
@@ -10,12 +12,15 @@ public class GameController {
     private JTextField inputField;
     private JLabel scoreLabel;
     private JLabel livesLabel;
-    private JPanel gamePanel; // Changed from GamePanel to JPanel
+    private JPanel gamePanel;
+    private Timer jamTimer; // Timer for keyboard jamming effect
     
     // Game state
     private int score;
     private int lives;
     private boolean gameRunning;
+    private boolean isKeyboardJammed;
+    private long jamEndTime;
     
     public GameController() {
         // Initialize game variables
@@ -23,9 +28,18 @@ public class GameController {
         score = 0;
         lives = Constants.INITIAL_LIVES;
         gameRunning = true;
+        isKeyboardJammed = false;
         
         // Initialize UI components
         initializeComponents();
+        
+        // Timer for checking jam status
+        jamTimer = new Timer(100, e -> {
+            if (isKeyboardJammed && System.currentTimeMillis() > jamEndTime) {
+                endKeyboardJam();
+            }
+        });
+        jamTimer.start();
     }
     
     private void initializeComponents() {
@@ -41,7 +55,12 @@ public class GameController {
         inputField.addKeyListener(new KeyAdapter() {
             @Override
             public void keyReleased(KeyEvent e) {
-                checkInput();
+                if (!isKeyboardJammed) {
+                    checkInput();
+                } else {
+                    // Clear input while jammed
+                    inputField.setText("");
+                }
             }
         });
     }
@@ -74,30 +93,53 @@ public class GameController {
         int x = Constants.WIDTH - Constants.MONSTER_SIZE;
         int y = Constants.RANDOM.nextInt(Constants.HEIGHT - 100 - Constants.MONSTER_SIZE);
         
-        monsters.add(new Monster(x, y, word));
+        // Random chance to spawn a monster with keyboard jam power
+        boolean hasJamPower = Constants.RANDOM.nextInt(100) < Constants.JAM_POWER_CHANCE;
+        
+        monsters.add(new Monster(x, y, word, hasJamPower));
     }
     
     private void updateGame() {
         if (!gameRunning) return;
+
+        int panelWidth = gamePanel.getWidth();
         
-        // Update all monsters
-        ArrayList<Monster> monstersToRemove = new ArrayList<>();
-        for (Monster monster : monsters) {
-            monster.update();
+        // Use an Iterator to safely remove monsters while iterating
+        Iterator<Monster> iterator = monsters.iterator();
+        while (iterator.hasNext()) {
+            Monster monster = iterator.next();
+            monster.update(panelWidth);
             
             // Check if monster reached the base
             if (monster.getX() <= 0) {
-                monstersToRemove.add(monster);
+                iterator.remove(); // Safe removal using Iterator
+                
+                // If monster had jam power and reached base, activate jam
+                if (monster.hasJamPower()) {
+                    startKeyboardJam();
+                }
+                
                 decreaseLives();
             }
         }
-        
-        // Remove monsters that reached the base
-        monsters.removeAll(monstersToRemove);
+    }
+    
+    private void startKeyboardJam() {
+        isKeyboardJammed = true;
+        jamEndTime = System.currentTimeMillis() + Constants.JAM_DURATION;
+        inputField.setBackground(Color.RED);
+        inputField.setToolTipText("Keyboard jammed! Can't type for " + 
+                                (Constants.JAM_DURATION/1000) + " seconds!");
+    }
+    
+    private void endKeyboardJam() {
+        isKeyboardJammed = false;
+        inputField.setBackground(Color.WHITE);
+        inputField.setToolTipText("");
     }
     
     private void checkInput() {
-        if (!gameRunning) return;
+        if (!gameRunning || isKeyboardJammed) return;
         
         String input = inputField.getText().trim().toLowerCase();
         if (input.isEmpty()) return;
@@ -137,6 +179,7 @@ public class GameController {
     private void gameOver() {
         gameRunning = false;
         gameTimer.stop();
+        jamTimer.stop();
         
         JOptionPane.showMessageDialog(gamePanel, 
             "Game Over!\nYour score: " + score, 
@@ -154,7 +197,11 @@ public class GameController {
         scoreLabel.setText("Score: " + score);
         livesLabel.setText("Lives: " + lives);
         gameRunning = true;
+        isKeyboardJammed = false;
+        inputField.setBackground(Color.WHITE);
+        inputField.setToolTipText("");
         gameTimer.start();
+        jamTimer.start();
     }
     
     // Getters for components
@@ -174,7 +221,11 @@ public class GameController {
         return livesLabel;
     }
     
-    public void setGamePanel(JPanel gamePanel) { // Changed from GamePanel to JPanel
+    public void setGamePanel(JPanel gamePanel) { 
         this.gamePanel = gamePanel;
+    }
+    
+    public boolean isKeyboardJammed() {
+        return isKeyboardJammed;
     }
 }
