@@ -1,5 +1,4 @@
 import java.util.Random;
-import java.awt.Color;
 
 public class Constants {
     // Game dimensions
