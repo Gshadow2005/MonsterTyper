@@ -48,14 +48,24 @@ public class GameController {
     }
     
     public void startGame() {
-        // Create and start game timer
+        if (gameTimer != null) {
+            gameTimer.stop();
+        }
+        
+        if (gameTimer != null) {
+            resetGame();
+        }
+        
+        // Set game as running
+        gameRunning = true;
+        
+        // Create and start new game timer
         gameTimer = new Timer(16, e -> {
             updateGame();
             if (gamePanel != null) {
                 gamePanel.repaint();
             }
             
-            // Spawn new monster occasionally
             if (Constants.RANDOM.nextInt(100) < Constants.SPAWN_CHANCE) {
                 spawnMonster();
             }
@@ -63,7 +73,9 @@ public class GameController {
         
         gameTimer.start();
         
-        // Spawn first monster
+        if (inputField != null) {
+            inputField.setText("");
+        }
         spawnMonster();
     }
     
@@ -148,15 +160,24 @@ public class GameController {
         resetGame();
     }
     
-    private void resetGame() {
+    public void resetGame() {
         monsters.clear();
         score = 0;
         lives = Constants.INITIAL_LIVES;
         scoreLabel.setText("Score: " + score);
         livesLabel.setText("Lives: " + lives);
         gameRunning = true;
-        gameTimer.start();
+        if (gameTimer != null) {
+            gameTimer.stop(); 
+        }
     }
+
+    public void stopGame() {
+        if (gameTimer != null) {
+            gameTimer.stop();
+            gameRunning = false;
+        }
+    }    
 
     public void pauseGame() {
         if (gameRunning && gameTimer != null) {

@@ -16,12 +16,17 @@ public class App extends JFrame {
         setResizable(true);
         setLocationRelativeTo(null);
         
+        // Create card layout for navigation
         cardLayout = new CardLayout();
         mainPanel = new JPanel(cardLayout);
-        //Main menu
+        
+        // Create main menu
         mainMenu = new MainMenu(e -> startGame());
+        
+        // Create game container (will be populated when Play is clicked)
         gameContainer = new JPanel(new BorderLayout());
         
+        // Add panels to card layout
         mainPanel.add(mainMenu, "MENU");
         mainPanel.add(gameContainer, "GAME");
         
@@ -33,10 +38,11 @@ public class App extends JFrame {
     }
     
     private void startGame() {
+        // First time setup of game components
         if (gameController == null) {
             gameController = new GameController();
             
-
+            // Create and set up game panels
             GamePanel gamePanel = new GamePanel(gameController);
             gameContainer.add(gamePanel, BorderLayout.CENTER);
             
@@ -61,6 +67,9 @@ public class App extends JFrame {
             controlPanel.add(gameController.getInputField(), BorderLayout.CENTER);
             
             gameContainer.add(controlPanel, BorderLayout.SOUTH);
+        } else {
+            // If returning to game, reset it first
+            gameController.resetGame();
         }
         
         // Switch to game screen
@@ -72,8 +81,10 @@ public class App extends JFrame {
     }
     
     private void returnToMenu() {
+        // Reset the game completely when returning to menu
         if (gameController != null) {
-            gameController.pauseGame();
+            gameController.resetGame();
+            gameController.stopGame(); // Stop the timer completely
         }
         
         // Switch to menu screen
