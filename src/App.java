@@ -23,7 +23,7 @@ public class App extends JFrame implements GameController.GameEventListener {
         // Create main menu
         mainMenu = new MainMenu(e -> startGame());
         
-        // Create game container (will be populated when Play is clicked)
+        // Create game container 
         gameContainer = new JPanel(new BorderLayout());
         
         // Add panels to card layout
@@ -70,23 +70,19 @@ public class App extends JFrame implements GameController.GameEventListener {
             
             gameContainer.add(controlPanel, BorderLayout.SOUTH);
         } else {
-            // If returning to game, reset it first
             gameController.resetGame();
         }
-        
-        // Switch to game screen
+
         cardLayout.show(mainPanel, "GAME");
-        
-        // Request focus on input field and start game
+
         gameController.getInputField().requestFocus();
         gameController.startGame();
     }
     
     private void returnToMenu() {
-        // Reset the game completely when returning to menu
         if (gameController != null) {
             gameController.resetGame();
-            gameController.stopGame(); // Stop the timer completely
+            gameController.stopGame(); 
         }
         
         // Switch to menu screen

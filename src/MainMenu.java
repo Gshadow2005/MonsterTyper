@@ -12,19 +12,16 @@ public class MainMenu extends JPanel {
     
     public MainMenu(ActionListener playAction) {
         setLayout(new BorderLayout());
-        setBackground(new Color(20, 20, 40)); // Dark blue background
-        
-        // Center panel for logo and buttons
+        setBackground(new Color(20, 20, 40)); 
+
         JPanel centerPanel = new JPanel();
         centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
         centerPanel.setBackground(new Color(20, 20, 40));
-        
-        // Logo GIF - load from resources
+
         logoGif = loadLogoGif();
         JLabel logoLabel = new JLabel(logoGif);
         logoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        
-        // Title
+
         JLabel titleLabel = new JLabel("Monster Typer");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 36));
         titleLabel.setForeground(Color.WHITE);
@@ -133,11 +130,9 @@ public class MainMenu extends JPanel {
             
             g.dispose();
         }
-        
-        // Timer for animation
+
         Timer animationTimer = new Timer(800, null);
-        
-        // Icon using first frame
+
         ImageIcon icon = new ImageIcon(frames[0]);
         
         // Animation behavior

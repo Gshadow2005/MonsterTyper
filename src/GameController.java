@@ -6,7 +6,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class GameController {
     // Game components
-    private CopyOnWriteArrayList<Monster> monsters; // Changed to thread-safe collection
+    private CopyOnWriteArrayList<Monster> monsters;
     private Timer gameTimer;
     private JTextField inputField;
     private JLabel scoreLabel;
@@ -19,8 +19,7 @@ public class GameController {
     private boolean gameRunning;
     
     public GameController() {
-        // Initialize game variables
-        monsters = new CopyOnWriteArrayList<>(); // Changed to thread-safe collection
+        monsters = new CopyOnWriteArrayList<>(); 
         score = 0;
         lives = Constants.INITIAL_LIVES;
         gameRunning = true;
@@ -96,8 +95,7 @@ public class GameController {
         if (!gameRunning) return;
 
         int panelWidth = gamePanel.getWidth();
-        
-        // With CopyOnWriteArrayList, we can use the enhanced for loop safely
+
         ArrayList<Monster> monstersToRemove = new ArrayList<>();
         
         for (Monster monster : monsters) {
@@ -161,8 +159,7 @@ public class GameController {
     private void gameOver() {
         gameRunning = false;
         gameTimer.stop();
-        
-        // Show game over 
+
         int option = JOptionPane.showConfirmDialog(gamePanel, 
             "Game Over!\nYour score: " + score + "\n\nPlay again?", 
             "Monster Typer", 
@@ -211,9 +208,9 @@ public class GameController {
     private void setupClearInputTimer() {
         clearInputTimer = new Timer(1500, e -> {
             inputField.setText("");
-            ((Timer)e.getSource()).stop(); // Stop the timer after clearing
+            ((Timer)e.getSource()).stop(); 
         });
-        clearInputTimer.setRepeats(false); // Only fire once
+        clearInputTimer.setRepeats(false);
     }    
 
     public void stopGame() {
@@ -232,7 +229,6 @@ public class GameController {
     
     // Getters for components
     public ArrayList<Monster> getMonsters() {
-        // Convert CopyOnWriteArrayList to ArrayList for compatibility
         return new ArrayList<>(monsters);
     }
     
