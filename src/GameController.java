@@ -164,6 +164,13 @@ public class GameController {
             }
         }
     }
+
+    public void increaseMonsterSpeed() {
+        Constants.currentMonsterSpeed += 0.01;
+        if (Constants.currentMonsterSpeed > Constants.MONSTER_MAX_SPEED) {
+            Constants.currentMonsterSpeed = Constants.MONSTER_MAX_SPEED;
+        }
+    }
     
     // Add the missing methods for keyboard jam functionality
     private void startKeyboardJam() {
@@ -182,6 +189,7 @@ public class GameController {
     
     private void increaseScore() {
         score += Constants.SCORE_PER_MONSTER;
+        increaseMonsterSpeed();
         scoreLabel.setText("Score: " + score);
     }
     

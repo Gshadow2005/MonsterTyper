@@ -8,26 +8,21 @@ public class Constants {
     
     // Monster properties
     public static final int MONSTER_SIZE = 50;
-    public static final int MONSTER_SPEED = 1;
-    public static final int JAM_MONSTER_EXTRA_SPEED = 1; // Jam monsters move faster
+    public static final double MONSTER_INITIAL_SPEED = 0.5;
+    public static final double MONSTER_MAX_SPEED = 3.0;
+
+    public static double currentMonsterSpeed = MONSTER_INITIAL_SPEED;
     
     // Game settings
     public static final int INITIAL_LIVES = 5;
     public static final int SCORE_PER_MONSTER = 10;
-    public static final int SCORE_PER_JAM_MONSTER = 15; // Bonus points for jam monsters
-    public static final int SPAWN_CHANCE = 2; // percent chance per frame
-    
-    // Power-up settings
-    public static final int JAM_POWER_CHANCE = 15; // 15% chance for a monster to have jam power
-    public static final int JAM_DURATION = 5000; // 5 seconds in milliseconds
-    public static final Color JAM_MONSTER_COLOR = new Color(255, 100, 100); // Light red
+    public static final int SPAWN_CHANCE = 1; // percent chance per frame
     
     // Word list for monsters
     public static final String[] WORDS = {"Tree", "Bird", "Snow", "Infinite", "Nebula", "Enigma", "Sand", 
-                                        "Leaf", "Wanderlust", "Labyrinth", "Grass", "core", "music", "ocean", 
-                                        "moon", "star", "sun", "sky", "cloud", "rain", "wind", "fire", "earth", 
-                                        "water", "lightning", "shadow", "dream", "whisper", "echo", "pulse", 
-                                        "wave", "spark"};
+                                            "Leaf", "Wanderlust", "Labyrinth", "Grass", "core", "music", "ocean", "moon", "star", "sun", "sky", "cloud", 
+                                            "rain", "wind", "fire", "earth", "water", "lightning", "shadow", "dream", "whisper", "echo", "pulse", "wave", "spark", "ILoveSopiya"};
+                                        
     
     // Random generator for the game
     public static final Random RANDOM = new Random();
