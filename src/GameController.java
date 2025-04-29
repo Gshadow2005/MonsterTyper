@@ -196,6 +196,7 @@ public class GameController {
             inputField.setEnabled(true);
             inputField.setBackground(Color.WHITE);
             inputField.setText("");
+            inputField.requestFocus();
         }
     }
     
