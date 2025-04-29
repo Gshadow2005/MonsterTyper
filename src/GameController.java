@@ -234,7 +234,7 @@ public class GameController {
     }
 
     public void increaseMonsterSpeed() {
-        Constants.currentMonsterSpeed += 0.1;
+        Constants.currentMonsterSpeed += 0.005;
         if (Constants.currentMonsterSpeed > Constants.MONSTER_MAX_SPEED) {
             Constants.currentMonsterSpeed = Constants.MONSTER_MAX_SPEED;
         }
