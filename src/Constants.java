@@ -17,16 +17,16 @@ public class Constants {
     public static final double MONSTER_MAX_SPEED = 3.0;
     public static final int JAM_POWER_CHANCE = 20; 
     public static final long JAM_DURATION = 3000; 
-    public static final int REVERSE_POWER_CHANCE = 15;
+    public static final int REVERSE_POWER_CHANCE = 15; 
     public static final int SPLIT_CHANCE = 10; 
-    public static final int REVERSE_DURATION = 3000;
+    public static final long SCRAMBLE_DURATION = 5000; 
 
     public static double currentMonsterSpeed = MONSTER_INITIAL_SPEED;
     
     // Game settings
     public static final int INITIAL_LIVES = 5;
     public static final int SCORE_PER_MONSTER = 10;
-    public static final int SPAWN_CHANCE = 1; // percent chance per frame
+    public static final int SPAWN_CHANCE = 1; 
     
     // Word list for monsters
     public static final String[] WORDS = loadWordsFromFile("assets/words.txt");
@@ -39,7 +39,7 @@ public class Constants {
         try (InputStream inputStream = Constants.class.getClassLoader().getResourceAsStream(filePath)) {
             if (inputStream == null) {
                 System.err.println("File not found: " + filePath);
-                return new String[0]; // Return an empty array if the file is not found
+                return new String[0]; 
             }
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
                 String line;

@@ -2,6 +2,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class GameController {
@@ -13,16 +15,19 @@ public class GameController {
     private JLabel scoreLabel;
     private JLabel livesLabel;
     private JPanel gamePanel;
-    private Timer jamTimer; // Timer for keyboard jamming effect
+    private Timer jamTimer;
     
     // Game state
     private int score;
     private int lives;
     private boolean gameRunning;
     private boolean isKeyboardJammed;
-    private boolean isInputReversed;
+    private boolean isInputScrambled; 
     private long jamEndTime;
-    private long reverseEndTime;
+    private long scrambleEndTime; 
+    
+    // Map for scrambled keys
+    private Map<Character, Character> scrambledKeyMap;
     
     public GameController() {
         monsters = new CopyOnWriteArrayList<>(); 
@@ -30,7 +35,10 @@ public class GameController {
         lives = Constants.INITIAL_LIVES;
         gameRunning = true;
         isKeyboardJammed = false;
-        isInputReversed = false;
+        isInputScrambled = false;
+        
+        // Initialize scrambled key map
+        scrambledKeyMap = new HashMap<>();
         
         // Initialize UI components
         initializeComponents();
@@ -46,8 +54,8 @@ public class GameController {
                 endKeyboardJam();
             }
 
-            if (isInputReversed && currentTime > reverseEndTime) {
-                endInputReverse();
+            if (isInputScrambled && currentTime > scrambleEndTime) {
+                endInputScramble();
             }
         });
         jamTimer.start();
@@ -61,9 +69,29 @@ public class GameController {
         livesLabel = new JLabel("Lives: " + lives);
         livesLabel.setForeground(Color.WHITE);
         
-        // Create input field with key listener
+
         inputField = new JTextField();
         inputField.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+
+                if (isInputScrambled) {
+                    char typedChar = e.getKeyChar();
+                    if (Character.isLetter(typedChar)) {
+                        char scrambledChar = scrambledKeyMap.getOrDefault(
+                            Character.toLowerCase(typedChar), 
+                            typedChar
+                        );
+
+                        if (Character.isUpperCase(typedChar)) {
+                            scrambledChar = Character.toUpperCase(scrambledChar);
+                        }
+
+                        e.setKeyChar(scrambledChar);
+                    }
+                }
+            }
+            
             @Override
             public void keyReleased(KeyEvent e) {
                 if (!isKeyboardJammed) {
@@ -154,11 +182,6 @@ public class GameController {
         String input = inputField.getText().trim().toLowerCase();
         if (input.isEmpty()) return;
 
-        // reverse the input string
-        if (isInputReversed) {
-            input = new StringBuilder(input).reverse().toString();
-        }
-
         Monster monsterToHit = null;
         for (Monster monster : monsters) {
             if (input.equals(monster.getWord().toLowerCase())) {
@@ -194,7 +217,7 @@ public class GameController {
                     increaseLife();
                 }
                 if (hasReverseInputPower) {
-                    startInputReverse();
+                    startInputScramble(); // Changed from startInputReverse
                 }
             }
 
@@ -217,10 +240,12 @@ public class GameController {
         }
     }
     
-    // Input reversal functionality
-    private void startInputReverse() {
-        isInputReversed = true;
-        reverseEndTime = System.currentTimeMillis() + Constants.REVERSE_DURATION;
+    // Input scrambling functionality
+    private void startInputScramble() {
+        isInputScrambled = true;
+        scrambleEndTime = System.currentTimeMillis() + Constants.SCRAMBLE_DURATION;
+
+        generateScrambledKeyMap();
         
         if (inputField != null) {
             inputField.setBackground(new Color(200, 200, 255)); 
@@ -228,8 +253,23 @@ public class GameController {
         }
     }
     
-    private void endInputReverse() {
-        isInputReversed = false;
+    private void generateScrambledKeyMap() {
+        scrambledKeyMap.clear();
+        String alphabet = "abcdefghijklmnopqrstuvwxyz";
+        //char[] scrambledAlphabet = alphabet.toCharArray();
+
+        int shift = Constants.RANDOM.nextInt(10) + 5; 
+        
+        for (int i = 0; i < alphabet.length(); i++) {
+            char originalChar = alphabet.charAt(i);
+            char scrambledChar = alphabet.charAt((i + shift) % alphabet.length());
+            scrambledKeyMap.put(originalChar, scrambledChar);
+        }
+    }
+    
+    private void endInputScramble() {
+        isInputScrambled = false;
+        scrambledKeyMap.clear();
         
         if (inputField != null) {
             inputField.setBackground(Color.WHITE);
@@ -364,7 +404,8 @@ public class GameController {
         
         gameRunning = true;
         isKeyboardJammed = false;
-        isInputReversed = false;
+        isInputScrambled = false;
+        scrambledKeyMap.clear();
         
         if (inputField != null) {
             inputField.setEnabled(true);
@@ -425,8 +466,8 @@ public class GameController {
         return isKeyboardJammed;
     }
     
-    public boolean isInputReversed() {
-        return isInputReversed;
+    public boolean isInputScrambled() {
+        return isInputScrambled;
     }
     
     public boolean isGameRunning() {
