@@ -2,11 +2,11 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class GameController {
     // Game components
-    private ArrayList<Monster> monsters;
+    private CopyOnWriteArrayList<Monster> monsters; // Changed to thread-safe collection
     private Timer gameTimer;
     private JTextField inputField;
     private JLabel scoreLabel;
@@ -20,7 +20,7 @@ public class GameController {
     
     public GameController() {
         // Initialize game variables
-        monsters = new ArrayList<>();
+        monsters = new CopyOnWriteArrayList<>(); // Changed to thread-safe collection
         score = 0;
         lives = Constants.INITIAL_LIVES;
         gameRunning = true;
@@ -97,17 +97,22 @@ public class GameController {
 
         int panelWidth = gamePanel.getWidth();
         
-        // Use an Iterator to safely remove monsters while iterating
-        Iterator<Monster> iterator = monsters.iterator();
-        while (iterator.hasNext()) {
-            Monster monster = iterator.next();
+        // With CopyOnWriteArrayList, we can use the enhanced for loop safely
+        ArrayList<Monster> monstersToRemove = new ArrayList<>();
+        
+        for (Monster monster : monsters) {
             monster.update(panelWidth);
             
             // Check if monster reached the base
             if (monster.getX(panelWidth) <= 0) {
-                iterator.remove(); // Safe removal using Iterator
+                monstersToRemove.add(monster);
                 decreaseLives();
             }
+        }
+        
+        // Remove monsters after iteration
+        if (!monstersToRemove.isEmpty()) {
+            monsters.removeAll(monstersToRemove);
         }
     }
     
@@ -227,7 +232,8 @@ public class GameController {
     
     // Getters for components
     public ArrayList<Monster> getMonsters() {
-        return monsters;
+        // Convert CopyOnWriteArrayList to ArrayList for compatibility
+        return new ArrayList<>(monsters);
     }
     
     public JTextField getInputField() {
