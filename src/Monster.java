@@ -1,8 +1,9 @@
 import java.awt.*;
+import java.awt.geom.AffineTransform;
 
 public class Monster {
     private String word;
-    private Color color;
+    //private Color color;
     private double relativeX, relativeY;
     private static final Image MONSTER_IMAGE = Toolkit.getDefaultToolkit().getImage(Monster.class.getResource("/assets/MonsterTyper_Zombie.gif"));
     
@@ -10,11 +11,11 @@ public class Monster {
         // this.x = x;
         // this.y = y;
         this.word = word;
-        this.color = new Color(
-            Constants.RANDOM.nextInt(128) + 127, 
-            Constants.RANDOM.nextInt(128) + 127, 
-            Constants.RANDOM.nextInt(128) + 127
-        );
+        // this.color = new Color(
+        //     Constants.RANDOM.nextInt(128) + 127, 
+        //     Constants.RANDOM.nextInt(128) + 127, 
+        //     Constants.RANDOM.nextInt(128) + 127
+        // );
 
         relativeX = x / (double) Constants.WIDTH;
         relativeY = y / (double) Constants.HEIGHT;
@@ -27,14 +28,19 @@ public class Monster {
     }
     
     public void draw(Graphics g, int panelWidth, int panelHeight) {
-        // Calculate the new position based on the relative position
+        Graphics2D g2d = (Graphics2D) g;
+
         int realX = (int) (relativeX * panelWidth);
         int realY = (int) (relativeY * panelHeight);
         int scaledSize = (int) (Constants.MONSTER_SIZE * Math.min(panelWidth / (double) Constants.WIDTH, panelHeight / (double) Constants.HEIGHT));
 
+        AffineTransform oldTransform = g2d.getTransform();
+        g2d.translate(realX + scaledSize, realY);
+        g2d.scale(-1, 1); 
+
         // Draw monster body
-        g.setColor(color);
-        g.drawImage(MONSTER_IMAGE, realX, realY, scaledSize, scaledSize, null);
+        g2d.drawImage(MONSTER_IMAGE, 0, 0, scaledSize, scaledSize, null);
+        g2d.setTransform(oldTransform);
         
         // Draw word
         g.setColor(Color.WHITE);
