@@ -14,7 +14,7 @@ public class MainMenu extends JPanel {
 
     private static final Color BACKGROUND_COLOR = new Color(10, 10, 20);
     private static final Color BUTTON_COLOR = new Color(80, 80, 200);
-    private static final Color BUTTON_HOVER_COLOR = new Color(100, 100, 220);
+    private static final Color BUTTON_HOVER_COLOR = new Color(139, 0, 0);
     
     public MainMenu(ActionListener playAction) {
         setLayout(new BorderLayout());
@@ -28,9 +28,10 @@ public class MainMenu extends JPanel {
         JLabel logoLabel = new JLabel(logoGif);
         logoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
+
         JLabel titleLabel = new JLabel("Monster Typer");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 36));
-        titleLabel.setForeground(Color.WHITE);
+        titleLabel.setFont(new Font("Monospaced", Font.BOLD, 42));
+        titleLabel.setForeground(new Color(139, 0, 0));
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         
         // Button panel
@@ -73,9 +74,10 @@ public class MainMenu extends JPanel {
         button.setFocusPainted(false);
         button.setBorderPainted(true);
         button.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(BUTTON_HOVER_COLOR, 2),
+            BorderFactory.createLineBorder(new Color(30, 30, 30), 2), 
             BorderFactory.createEmptyBorder(5, 15, 5, 15)
         ));
+        
         button.setPreferredSize(new Dimension(150, 40));
 
         button.addMouseListener(new MouseAdapter() {
