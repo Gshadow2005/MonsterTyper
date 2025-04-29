@@ -12,7 +12,7 @@ public class Constants {
     // Game settings
     public static final int INITIAL_LIVES = 5;
     public static final int SCORE_PER_MONSTER = 10;
-    public static final int SPAWN_CHANCE = 2; // percent chance per frame
+    public static final int SPAWN_CHANCE = 1; // percent chance per frame
     
     // Word list for monsters
     public static final String[] WORDS = {"Tree", "Bird", "Snow", "Infinite", "Nebula", "Enigma", "Sand", 
