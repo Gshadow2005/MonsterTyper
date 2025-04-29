@@ -1,3 +1,4 @@
 # Ignore build artifacts
 # Ignore all files in the bin directory
+# Don't ignore me
 bin/

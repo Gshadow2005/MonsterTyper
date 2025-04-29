@@ -30,6 +30,11 @@ public class Monster {
 
     private boolean hasJamPower;
     private boolean hasExtraLife;
+    private boolean hasReverseInputPower;
+    private boolean canSplit;
+    private boolean isChildMonster;
+    private int health = 1;
+    private int size;
 
     /**
      * Constructor with three parameters, auto-assigns abilities based on chance
@@ -40,10 +45,20 @@ public class Monster {
 
         relativeX = x / (double) Constants.WIDTH;
         relativeY = y / (double) Constants.HEIGHT;
+        this.size = Constants.MONSTER_SIZE;
 
         // Auto-assign abilities based on chance
-        this.hasJamPower = Constants.RANDOM.nextInt(100) < 20;     // 20% chance
+        this.hasJamPower = Constants.RANDOM.nextInt(100) < Constants.JAM_POWER_CHANCE;     // Default 20% chance
         this.hasExtraLife = Constants.RANDOM.nextInt(100) < 10;    // 10% chance
+        this.hasReverseInputPower = Constants.RANDOM.nextInt(100) < Constants.REVERSE_POWER_CHANCE; // (Add to Constants)
+        this.canSplit = Constants.RANDOM.nextInt(100) < Constants.SPLIT_CHANCE; // (Add to Constants)
+        
+        if (canSplit) {
+            // Splitting monsters have 2 health
+            this.health = 2;
+        }
+        
+        this.isChildMonster = false;
     }
 
     /**
@@ -55,23 +70,53 @@ public class Monster {
 
         relativeX = x / (double) Constants.WIDTH;
         relativeY = y / (double) Constants.HEIGHT;
+        this.size = Constants.MONSTER_SIZE;
 
         // Explicitly set jam power
         this.hasJamPower = hasJamPower;
         
-        // Auto-assign extra life based on chance
+        // Auto-assign other powers based on chance
         this.hasExtraLife = Constants.RANDOM.nextInt(100) < 10;    // 10% chance
+        this.hasReverseInputPower = Constants.RANDOM.nextInt(100) < Constants.REVERSE_POWER_CHANCE;
+        this.canSplit = Constants.RANDOM.nextInt(100) < Constants.SPLIT_CHANCE;
+        
+        if (canSplit) {
+            this.health = 2;
+        }
+        
+        this.isChildMonster = false;
+    }
+    
+    /**
+     * Constructor for child monsters (created when parent splits)
+     */
+    public Monster(double relX, double relY, String word, int size, boolean isChild) {
+        this.word = word != null ? word : "";
+        this.relativeX = relX;
+        this.relativeY = relY;
+        this.size = size;
+        
+        // Child monsters don't have special powers
+        this.hasJamPower = false;
+        this.hasExtraLife = false;
+        this.hasReverseInputPower = false;
+        this.canSplit = false;
+        this.health = 1;
+        this.isChildMonster = isChild;
     }
 
     public void update(int panelWidth) {
         double pixelsToMove = Constants.currentMonsterSpeed;
+
+        if (isChildMonster) {
+            pixelsToMove *= 1.2;
+        }
         double moveAmount = pixelsToMove / Constants.WIDTH;
         relativeX -= moveAmount;
     }
 
     public void draw(Graphics g, int panelWidth, int panelHeight) {
         if (MONSTER_IMAGE == null) {
-            // Draw a placeholder if image is not available
             drawPlaceholderMonster(g, panelWidth, panelHeight);
             return;
         }
@@ -80,12 +125,11 @@ public class Monster {
 
         int realX = (int) (relativeX * panelWidth);
         int realY = (int) (relativeY * panelHeight);
-        int scaledSize = (int) (Constants.MONSTER_SIZE * Math.min(
+        int scaledSize = (int) (size * Math.min(
             panelWidth / (double) Constants.WIDTH,
             panelHeight / (double) Constants.HEIGHT
         ));
 
-        // Save the original transform
         AffineTransform oldTransform = g2d.getTransform();
 
         // Flip image horizontally
@@ -97,13 +141,7 @@ public class Monster {
         g2d.setTransform(oldTransform);
 
         // Draw health bar
-        int healthBarHeight = 3;
-        int healthBarWidth = scaledSize - 5;
-        int healthBarX = realX;
-        int healthBarY = realY - 10;
-
-        g.setColor(Color.RED);
-        g.fillRect(healthBarX, healthBarY, healthBarWidth, healthBarHeight);
+        drawHealthBar(g, realX, realY, scaledSize);
 
         // Draw the word
         drawWord(g, realX, realY, scaledSize);
@@ -112,16 +150,38 @@ public class Monster {
         drawPowerIndicator(g, realX, realY, scaledSize);
     }
     
+    private void drawHealthBar(Graphics g, int realX, int realY, int scaledSize) {
+        int healthBarHeight = 3;
+        int healthBarWidth = scaledSize - 5;
+        int healthBarX = realX;
+        int healthBarY = realY - 10;
+
+        // Background (empty) health bar
+        g.setColor(Color.DARK_GRAY);
+        g.fillRect(healthBarX, healthBarY, healthBarWidth, healthBarHeight);
+        
+        // Filled health based on current health
+        float healthPercent = health / (canSplit ? 2.0f : 1.0f);
+        int filledWidth = (int)(healthBarWidth * healthPercent);
+        
+        g.setColor(Color.RED);
+        g.fillRect(healthBarX, healthBarY, filledWidth, healthBarHeight);
+    }
+    
     private void drawPlaceholderMonster(Graphics g, int panelWidth, int panelHeight) {
         int realX = (int) (relativeX * panelWidth);
         int realY = (int) (relativeY * panelHeight);
-        int scaledSize = (int) (Constants.MONSTER_SIZE * Math.min(
+        int scaledSize = (int) (size * Math.min(
             panelWidth / (double) Constants.WIDTH,
             panelHeight / (double) Constants.HEIGHT
         ));
         
         // Draw a simple placeholder rectangle
-        g.setColor(Color.GREEN);
+        if (isChildMonster) {
+            g.setColor(new Color(100, 180, 100)); // Lighter green for children
+        } else {
+            g.setColor(Color.GREEN);
+        }
         g.fillRect(realX, realY, scaledSize, scaledSize);
         
         // Draw the word
@@ -137,7 +197,7 @@ public class Monster {
         }
         
         g.setColor(Color.WHITE);
-        g.setFont(new Font("Arial", Font.BOLD, 12));
+        g.setFont(new Font("Arial", Font.BOLD, isChildMonster ? 10 : 12));
         FontMetrics fm = g.getFontMetrics();
         int textWidth = fm.stringWidth(word);
         int textX = realX + (scaledSize - textWidth) / 2;
@@ -147,16 +207,31 @@ public class Monster {
     }
     
     private void drawPowerIndicator(Graphics g, int realX, int realY, int scaledSize) {
-        // Draw jam power indicator
+        int indicatorY = realY - 5;
+        int indicatorSize = 8;
+        
+        // Draw jam power indicator (red)
         if (hasJamPower) {
             g.setColor(Color.RED);
-            g.fillOval(realX + scaledSize - 10, realY - 5, 8, 8);
+            g.fillOval(realX + scaledSize - 10, indicatorY, indicatorSize, indicatorSize);
         }
         
-        // Draw extra life indicator
+        // Draw extra life indicator (green)
         if (hasExtraLife) {
             g.setColor(Color.GREEN);
-            g.fillOval(realX + scaledSize - 20, realY - 5, 8, 8);
+            g.fillOval(realX + scaledSize - 20, indicatorY, indicatorSize, indicatorSize);
+        }
+        
+        // Draw reverse input power indicator (blue)
+        if (hasReverseInputPower) {
+            g.setColor(Color.BLUE);
+            g.fillOval(realX + scaledSize - 30, indicatorY, indicatorSize, indicatorSize);
+        }
+        
+        // Draw split indicator (yellow)
+        if (canSplit) {
+            g.setColor(Color.YELLOW);
+            g.fillOval(realX + scaledSize - 40, indicatorY, indicatorSize, indicatorSize);
         }
     }
 
@@ -179,6 +254,30 @@ public class Monster {
     public boolean hasExtraLife() {
         return hasExtraLife;
     }
+    
+    public boolean hasReverseInputPower() {
+        return hasReverseInputPower;
+    }
+    
+    public boolean canSplit() {
+        return canSplit;
+    }
+    
+    public boolean isChildMonster() {
+        return isChildMonster;
+    }
+    
+    public int getHealth() {
+        return health;
+    }
+    
+    public void decreaseHealth() {
+        health--;
+    }
+    
+    public int getSize() {
+        return size;
+    }
 
     public double getRelativeX() {
         return relativeX;
@@ -186,5 +285,30 @@ public class Monster {
 
     public double getRelativeY() {
         return relativeY;
+    }
+    
+    public Monster[] split() {
+        if (!canSplit || health > 0) {
+            return new Monster[0];
+        }
+
+        int childSize = (int)(size * 0.6);
+        String childWord = word.length() > 3 ? word.substring(0, word.length() / 2) : word;
+
+        int childCount = Constants.RANDOM.nextInt(2) + 2;
+        Monster[] children = new Monster[childCount];
+        
+        for (int i = 0; i < childCount; i++) {
+            double offsetX = relativeX + (Constants.RANDOM.nextDouble() * 0.05 - 0.025);
+            double offsetY = relativeY + (Constants.RANDOM.nextDouble() * 0.05 - 0.025);
+            
+            String monsterWord = (childWord.length() > i) 
+                ? childWord.substring(i, i+1) 
+                : Character.toString('a' + Constants.RANDOM.nextInt(26));
+                
+            children[i] = new Monster(offsetX, offsetY, monsterWord, childSize, true);
+        }
+        
+        return children;
     }
 }

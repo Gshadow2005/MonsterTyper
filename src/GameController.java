@@ -13,14 +13,16 @@ public class GameController {
     private JLabel scoreLabel;
     private JLabel livesLabel;
     private JPanel gamePanel;
-    private Timer jamTimer; 
+    private Timer jamTimer; // Timer for keyboard jamming effect
     
     // Game state
     private int score;
     private int lives;
     private boolean gameRunning;
     private boolean isKeyboardJammed;
+    private boolean isInputReversed;
     private long jamEndTime;
+    private long reverseEndTime;
     
     public GameController() {
         monsters = new CopyOnWriteArrayList<>(); 
@@ -28,6 +30,7 @@ public class GameController {
         lives = Constants.INITIAL_LIVES;
         gameRunning = true;
         isKeyboardJammed = false;
+        isInputReversed = false;
         
         // Initialize UI components
         initializeComponents();
@@ -35,10 +38,16 @@ public class GameController {
         // Initialize clearInputTimer
         setupClearInputTimer();
         
-        // Timer for checking jam status
+        // Timer for checking jam status and other effects
         jamTimer = new Timer(100, e -> {
-            if (isKeyboardJammed && System.currentTimeMillis() > jamEndTime) {
+            long currentTime = System.currentTimeMillis();
+
+            if (isKeyboardJammed && currentTime > jamEndTime) {
                 endKeyboardJam();
+            }
+
+            if (isInputReversed && currentTime > reverseEndTime) {
+                endInputReverse();
             }
         });
         jamTimer.start();
@@ -111,12 +120,7 @@ public class GameController {
         int x = Constants.WIDTH - Constants.MONSTER_SIZE;
         int y = Constants.RANDOM.nextInt(Constants.HEIGHT - 100 - Constants.MONSTER_SIZE);
         
-        // Random chance to spawn a monster with keyboard jam power
-        boolean hasJamPower = Constants.RANDOM.nextInt(100) < Constants.JAM_POWER_CHANCE;
-        
-        // Create monster with the jam power flag
-        Monster monster = new Monster(x, y, word, hasJamPower);
-        // Extra life flag is already being set inside the Monster constructor
+        Monster monster = new Monster(x, y, word);
         monsters.add(monster);
     }
     
@@ -124,6 +128,7 @@ public class GameController {
         if (!gameRunning || gamePanel == null) return;
 
         int panelWidth = gamePanel.getWidth();
+        //int panelHeight = gamePanel.getHeight();
 
         ArrayList<Monster> monstersToRemove = new ArrayList<>();
         
@@ -149,25 +154,53 @@ public class GameController {
         String input = inputField.getText().trim().toLowerCase();
         if (input.isEmpty()) return;
 
-        Monster monsterToRemove = null;
+        // reverse the input string
+        if (isInputReversed) {
+            input = new StringBuilder(input).reverse().toString();
+        }
+
+        Monster monsterToHit = null;
         for (Monster monster : monsters) {
             if (input.equals(monster.getWord().toLowerCase())) {
-                monsterToRemove = monster;
-                // Check if monster has keyboard jam power
-                if (monster.hasJamPower()) {
-                    startKeyboardJam();
-                }
-                if (monster.hasExtraLife()) {
-                    increaseLife();
-                }
+                monsterToHit = monster;
                 break;
             }
         }
 
-        if (monsterToRemove != null) {
-            monsters.remove(monsterToRemove);
+        if (monsterToHit != null) {
+            boolean hasJamPower = monsterToHit.hasJamPower();
+            boolean hasExtraLife = monsterToHit.hasExtraLife();
+            boolean hasReverseInputPower = monsterToHit.hasReverseInputPower();
+            boolean canSplit = monsterToHit.canSplit();
+            
+            // Decrease monster health
+            monsterToHit.decreaseHealth();
+            if (monsterToHit.getHealth() <= 0) {
+                if (canSplit) {
+                    // Add child monsters
+                    Monster[] children = monsterToHit.split();
+                    for (Monster child : children) {
+                        monsters.add(child);
+                    }
+                }
+
+                monsters.remove(monsterToHit);
+                
+                // Apply monster powers
+                if (hasJamPower) {
+                    startKeyboardJam();
+                }
+                if (hasExtraLife) {
+                    increaseLife();
+                }
+                if (hasReverseInputPower) {
+                    startInputReverse();
+                }
+            }
+
             increaseScore();
             inputField.setText("");
+            
         } else {
             if (clearInputTimer.isRunning()) {
                 clearInputTimer.restart(); 
@@ -184,14 +217,35 @@ public class GameController {
         }
     }
     
-    // Add the missing methods for keyboard jam functionality
+    // Input reversal functionality
+    private void startInputReverse() {
+        isInputReversed = true;
+        reverseEndTime = System.currentTimeMillis() + Constants.REVERSE_DURATION;
+        
+        if (inputField != null) {
+            inputField.setBackground(new Color(200, 200, 255)); 
+            inputField.setText("");
+        }
+    }
+    
+    private void endInputReverse() {
+        isInputReversed = false;
+        
+        if (inputField != null) {
+            inputField.setBackground(Color.WHITE);
+            inputField.setText("");
+            inputField.requestFocus();
+        }
+    }
+    
+    // Keyboard jam functionality
     private void startKeyboardJam() {
         isKeyboardJammed = true;
         jamEndTime = System.currentTimeMillis() + Constants.JAM_DURATION;
         
         if (inputField != null) {
             inputField.setEnabled(false);
-            inputField.setBackground(new Color(255, 200, 200));
+            inputField.setBackground(new Color(255, 200, 200)); // Light red background
         }
     }
     
@@ -215,6 +269,7 @@ public class GameController {
         }
     }
     
+    // Handling gaining an extra life 
     private void increaseLife() {
         lives++;
         
@@ -236,8 +291,11 @@ public class GameController {
         
         if (livesLabel != null) {
             livesLabel.setText("Lives: " + lives);
+            
+            // Visual feedback that player lost a life
             livesLabel.setForeground(Color.RED);
-
+            
+            // Timer to reset color after a brief period
             Timer colorTimer = new Timer(500, e -> {
                 livesLabel.setForeground(Color.WHITE);
                 ((Timer)e.getSource()).stop();
@@ -301,10 +359,17 @@ public class GameController {
         
         if (livesLabel != null) {
             livesLabel.setText("Lives: " + lives);
-            livesLabel.setForeground(Color.WHITE); 
+            livesLabel.setForeground(Color.WHITE); // Reset color
         }
         
         gameRunning = true;
+        isKeyboardJammed = false;
+        isInputReversed = false;
+        
+        if (inputField != null) {
+            inputField.setEnabled(true);
+            inputField.setBackground(Color.WHITE);
+        }
         
         if (gameTimer != null) {
             gameTimer.stop(); 
@@ -358,6 +423,10 @@ public class GameController {
     
     public boolean isKeyboardJammed() {
         return isKeyboardJammed;
+    }
+    
+    public boolean isInputReversed() {
+        return isInputReversed;
     }
     
     public boolean isGameRunning() {
