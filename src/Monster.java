@@ -4,6 +4,7 @@ public class Monster {
     private String word;
     private Color color;
     private double relativeX, relativeY;
+    private static final Image MONSTER_IMAGE = Toolkit.getDefaultToolkit().getImage(Monster.class.getResource("/assets/MonsterTyper_Zombie.gif"));
     
     public Monster(int x, int y, String word) {
         // this.x = x;
@@ -29,13 +30,11 @@ public class Monster {
         // Calculate the new position based on the relative position
         int realX = (int) (relativeX * panelWidth);
         int realY = (int) (relativeY * panelHeight);
-
-        // Scale monster size based on panel size
         int scaledSize = (int) (Constants.MONSTER_SIZE * Math.min(panelWidth / (double) Constants.WIDTH, panelHeight / (double) Constants.HEIGHT));
 
         // Draw monster body
         g.setColor(color);
-        g.fillOval(realX, realY, scaledSize, scaledSize);
+        g.drawImage(MONSTER_IMAGE, realX, realY, scaledSize, scaledSize, null);
         
         // Draw word
         g.setColor(Color.WHITE);

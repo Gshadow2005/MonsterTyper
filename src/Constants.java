@@ -6,11 +6,11 @@ public class Constants {
     public static final int HEIGHT = 700;
     
     // Monster properties
-    public static final int MONSTER_SIZE = 40;
+    public static final int MONSTER_SIZE = 50;
     public static final int MONSTER_SPEED = 1;
     
     // Game settings
-    public static final int INITIAL_LIVES = 3;
+    public static final int INITIAL_LIVES = 1000;
     public static final int SCORE_PER_MONSTER = 10;
     public static final int SPAWN_CHANCE = 2; // percent chance per frame
     
