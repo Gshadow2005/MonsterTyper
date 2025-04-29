@@ -7,17 +7,20 @@ public class Constants {
     
     // Monster properties
     public static final int MONSTER_SIZE = 50;
-    public static final int MONSTER_SPEED = 1;
+    public static final double MONSTER_INITIAL_SPEED = 0.5;
+    public static final double MONSTER_MAX_SPEED = 3.0;
+
+    public static double currentMonsterSpeed = MONSTER_INITIAL_SPEED;
     
     // Game settings
     public static final int INITIAL_LIVES = 5;
     public static final int SCORE_PER_MONSTER = 10;
-    public static final int SPAWN_CHANCE = 2; // percent chance per frame
+    public static final int SPAWN_CHANCE = 1; // percent chance per frame
     
     // Word list for monsters
     public static final String[] WORDS = {"Tree", "Bird", "Snow", "Infinite", "Nebula", "Enigma", "Sand", 
                                             "Leaf", "Wanderlust", "Labyrinth", "Grass", "core", "music", "ocean", "moon", "star", "sun", "sky", "cloud", 
-                                            "rain", "wind", "fire", "earth", "water", "lightning", "shadow", "dream", "whisper", "echo", "pulse", "wave", "spark"};
+                                            "rain", "wind", "fire", "earth", "water", "lightning", "shadow", "dream", "whisper", "echo", "pulse", "wave", "spark", "ILoveSopiya"};
                                         
     
     // Random generator for the game
