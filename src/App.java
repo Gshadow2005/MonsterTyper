@@ -1,73 +1,97 @@
 import javax.swing.*;
 import java.awt.*;
 
-public class App extends JFrame {
+public class App extends JFrame implements GameController.GameEventListener {
+    private CardLayout cardLayout;
+    private JPanel mainPanel;
+    private MainMenu mainMenu;
+    private JPanel gameContainer;
+    private GameController gameController;
+    
     public App() {
         setTitle("Monster Typer");
         setSize(Constants.WIDTH, Constants.HEIGHT);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setMinimumSize(new Dimension(800, 700));
         setResizable(true);
         setLocationRelativeTo(null);
         
-        // Create the game controller
-        GameController gameController = new GameController();
+        // Create card layout for navigation
+        cardLayout = new CardLayout();
+        mainPanel = new JPanel(cardLayout);
         
-        // Create and add the game panel
-        GamePanel gamePanel = new GamePanel(gameController);
-        add(gamePanel, BorderLayout.CENTER);
+        // Create main menu
+        mainMenu = new MainMenu(e -> startGame());
         
-        // Create the control panel
-        JPanel controlPanel = new JPanel(new BorderLayout());
-        controlPanel.setBackground(Color.DARK_GRAY);
+        // Create game container 
+        gameContainer = new JPanel(new BorderLayout());
         
-        // Create info panel (score and lives)
-        JPanel infoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        infoPanel.setBackground(Color.DARK_GRAY);
+        // Add panels to card layout
+        mainPanel.add(mainMenu, "MENU");
+        mainPanel.add(gameContainer, "GAME");
         
-        // Make labels more prominent
-        gameController.getScoreLabel().setFont(new Font("Arial", Font.BOLD, 14));
-        gameController.getLivesLabel().setFont(new Font("Arial", Font.BOLD, 14));
-        infoPanel.add(gameController.getScoreLabel());
-        infoPanel.add(Box.createHorizontalStrut(20)); // Add spacing
-        infoPanel.add(gameController.getLivesLabel());
+        // Start with menu
+        cardLayout.show(mainPanel, "MENU");
         
-        controlPanel.add(infoPanel, BorderLayout.NORTH);
-        
-        // Configure input field
-        JTextField inputField = gameController.getInputField();
-        inputField.setFont(new Font("Arial", Font.PLAIN, 16));
-        inputField.setMargin(new Insets(5, 5, 5, 5));
-        
-        // Add status label for jam notifications
-        JLabel statusLabel = new JLabel(" ");
-        statusLabel.setForeground(Color.ORANGE);
-        statusLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        
-        // Add components to control panel
-        JPanel inputPanel = new JPanel(new BorderLayout());
-        inputPanel.add(inputField, BorderLayout.CENTER);
-        inputPanel.add(statusLabel, BorderLayout.SOUTH);
-        controlPanel.add(inputPanel, BorderLayout.CENTER);
-        
-        add(controlPanel, BorderLayout.SOUTH);
-        
-        // Start the game
+        // Add main panel to frame
+        add(mainPanel);
+    }
+    
+    private void startGame() {
+        // First time setup of game components
+        if (gameController == null) {
+            gameController = new GameController();
+
+            gameController.setGameEventListener(this);
+            
+            // Create and set up game panels
+            GamePanel gamePanel = new GamePanel(gameController);
+            gameContainer.add(gamePanel, BorderLayout.CENTER);
+            
+            // Create control panel
+            JPanel controlPanel = new JPanel(new BorderLayout());
+            
+            // Create info panel (score and lives)
+            JPanel infoPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            infoPanel.add(gameController.getScoreLabel());
+            infoPanel.add(gameController.getLivesLabel());
+            infoPanel.setBackground(Color.DARK_GRAY);
+            
+            // Add back to menu button
+            JButton backButton = new JButton("Back to Menu");
+            backButton.addActionListener(e -> returnToMenu());
+            infoPanel.add(Box.createHorizontalGlue());
+            infoPanel.add(backButton);
+            
+            controlPanel.add(infoPanel, BorderLayout.NORTH);
+            
+            // Add input field
+            controlPanel.add(gameController.getInputField(), BorderLayout.CENTER);
+            
+            gameContainer.add(controlPanel, BorderLayout.SOUTH);
+        } else {
+            gameController.resetGame();
+        }
+
+        cardLayout.show(mainPanel, "GAME");
+
+        gameController.getInputField().requestFocus();
         gameController.startGame();
+    }
+    
+    private void returnToMenu() {
+        if (gameController != null) {
+            gameController.resetGame();
+            gameController.stopGame(); 
+        }
         
-        // Add listener for jam events (if you want visual feedback)
-        // This would require adding a method in GameController to register listeners
-        // For example:
-        // gameController.addGameEventListener(new GameEventListener() {
-        //     public void onKeyboardJam(boolean jammed) {
-        //         if (jammed) {
-        //             statusLabel.setText("KEYBOARD JAMMED!");
-        //             inputField.setBackground(new Color(255, 200, 200));
-        //         } else {
-        //             statusLabel.setText(" ");
-        //             inputField.setBackground(Color.WHITE);
-        //         }
-        //     }
-        // });
+        // Switch to menu screen
+        cardLayout.show(mainPanel, "MENU");
+    }
+    
+    @Override
+    public void onGameOver() {
+        returnToMenu();
     }
     
     public static void main(String[] args) {

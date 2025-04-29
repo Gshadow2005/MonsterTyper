@@ -4,15 +4,15 @@ import java.awt.Color;
 public class Constants {
     // Game dimensions
     public static final int WIDTH = 800;
-    public static final int HEIGHT = 600;
+    public static final int HEIGHT = 700;
     
     // Monster properties
-    public static final int MONSTER_SIZE = 40;
+    public static final int MONSTER_SIZE = 50;
     public static final int MONSTER_SPEED = 1;
     public static final int JAM_MONSTER_EXTRA_SPEED = 1; // Jam monsters move faster
     
     // Game settings
-    public static final int INITIAL_LIVES = 3;
+    public static final int INITIAL_LIVES = 5;
     public static final int SCORE_PER_MONSTER = 10;
     public static final int SCORE_PER_JAM_MONSTER = 15; // Bonus points for jam monsters
     public static final int SPAWN_CHANCE = 2; // percent chance per frame
