@@ -17,7 +17,7 @@ public class Constants {
     // Word list for monsters
     public static final String[] WORDS = {"Tree", "Bird", "Snow", "Infinite", "Nebula", "Enigma", "Sand", 
                                             "Leaf", "Wanderlust", "Labyrinth", "Grass", "core", "music", "ocean", "moon", "star", "sun", "sky", "cloud", 
-                                            "rain", "wind", "fire", "earth", "water", "lightning", "shadow", "dream", "whisper", "echo", "pulse", "wave", "spark"};
+                                            "rain", "wind", "fire", "earth", "water", "lightning", "shadow", "dream", "whisper", "echo", "pulse", "wave", "spark", "ILoveSopiya"};
                                         
     
     // Random generator for the game
