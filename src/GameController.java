@@ -140,9 +140,17 @@ public class GameController {
             }
         }
     }
+
+    public void increaseMonsterSpeed() {
+        Constants.currentMonsterSpeed += 0.01;
+        if (Constants.currentMonsterSpeed > Constants.MONSTER_MAX_SPEED) {
+            Constants.currentMonsterSpeed = Constants.MONSTER_MAX_SPEED;
+        }
+    }
     
     private void increaseScore() {
         score += Constants.SCORE_PER_MONSTER;
+        increaseMonsterSpeed();
         scoreLabel.setText("Score: " + score);
     }
     
