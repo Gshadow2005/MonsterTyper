@@ -2,11 +2,11 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class GameController {
     // Game components
-    private ArrayList<Monster> monsters;
+    private CopyOnWriteArrayList<Monster> monsters;
     private Timer gameTimer;
     private JTextField inputField;
     private JLabel scoreLabel;
@@ -19,8 +19,7 @@ public class GameController {
     private boolean gameRunning;
     
     public GameController() {
-        // Initialize game variables
-        monsters = new ArrayList<>();
+        monsters = new CopyOnWriteArrayList<>(); 
         score = 0;
         lives = Constants.INITIAL_LIVES;
         gameRunning = true;
@@ -48,22 +47,36 @@ public class GameController {
     }
     
     public void startGame() {
-        // Create and start game timer
+        if (gameTimer != null) {
+            gameTimer.stop();
+        }
+
+        if (gameTimer != null) {
+            resetGame();
+        }
+
+        gameRunning = true;
+
         gameTimer = new Timer(16, e -> {
             updateGame();
             if (gamePanel != null) {
                 gamePanel.repaint();
             }
-            
-            // Spawn new monster occasionally
+
             if (Constants.RANDOM.nextInt(100) < Constants.SPAWN_CHANCE) {
                 spawnMonster();
             }
         });
         
         gameTimer.start();
-        
-        // Spawn first monster
+
+        if (inputField != null) {
+            inputField.setText("");
+        }
+
+        if (clearInputTimer == null) {
+            setupClearInputTimer();
+        }
         spawnMonster();
     }
     
@@ -82,18 +95,22 @@ public class GameController {
         if (!gameRunning) return;
 
         int panelWidth = gamePanel.getWidth();
+
+        ArrayList<Monster> monstersToRemove = new ArrayList<>();
         
-        // Use an Iterator to safely remove monsters while iterating
-        Iterator<Monster> iterator = monsters.iterator();
-        while (iterator.hasNext()) {
-            Monster monster = iterator.next();
+        for (Monster monster : monsters) {
             monster.update(panelWidth);
             
             // Check if monster reached the base
             if (monster.getX(panelWidth) <= 0) {
-                iterator.remove(); // Safe removal using Iterator
+                monstersToRemove.add(monster);
                 decreaseLives();
             }
+        }
+        
+        // Remove monsters after iteration
+        if (!monstersToRemove.isEmpty()) {
+            monsters.removeAll(monstersToRemove);
         }
     }
     
@@ -102,8 +119,7 @@ public class GameController {
         
         String input = inputField.getText().trim().toLowerCase();
         if (input.isEmpty()) return;
-        
-        // Check if input matches any monster's word
+
         Monster monsterToRemove = null;
         for (Monster monster : monsters) {
             if (input.equals(monster.getWord().toLowerCase())) {
@@ -111,12 +127,17 @@ public class GameController {
                 break;
             }
         }
-        
-        // Remove matched monster and update score
+
         if (monsterToRemove != null) {
             monsters.remove(monsterToRemove);
             increaseScore();
             inputField.setText("");
+        } else {
+            if (clearInputTimer.isRunning()) {
+                clearInputTimer.restart(); 
+            } else {
+                clearInputTimer.start(); 
+            }
         }
     }
     
@@ -138,29 +159,77 @@ public class GameController {
     private void gameOver() {
         gameRunning = false;
         gameTimer.stop();
-        
-        JOptionPane.showMessageDialog(gamePanel, 
-            "Game Over!\nYour score: " + score, 
+
+        int option = JOptionPane.showConfirmDialog(gamePanel, 
+            "Game Over!\nYour score: " + score + "\n\nPlay again?", 
             "Monster Typer", 
+            JOptionPane.YES_NO_OPTION,
             JOptionPane.INFORMATION_MESSAGE);
         
-        // Reset game
-        resetGame();
+        if (option == JOptionPane.YES_OPTION) {
+            resetGame();
+            startGame();
+        } else {
+            resetGame();
+            fireGameOverEvent();
+        }
+    }
+
+    public interface GameEventListener {
+        void onGameOver();
     }
     
-    private void resetGame() {
+    private GameEventListener gameEventListener;
+    
+    public void setGameEventListener(GameEventListener listener) {
+        this.gameEventListener = listener;
+    }
+    
+    private void fireGameOverEvent() {
+        if (gameEventListener != null) {
+            gameEventListener.onGameOver();
+        }
+    }    
+    
+    public void resetGame() {
         monsters.clear();
         score = 0;
         lives = Constants.INITIAL_LIVES;
         scoreLabel.setText("Score: " + score);
         livesLabel.setText("Lives: " + lives);
         gameRunning = true;
-        gameTimer.start();
+        if (gameTimer != null) {
+            gameTimer.stop(); 
+        }
+    }
+
+    private Timer clearInputTimer;
+
+    private void setupClearInputTimer() {
+        clearInputTimer = new Timer(1500, e -> {
+            inputField.setText("");
+            ((Timer)e.getSource()).stop(); 
+        });
+        clearInputTimer.setRepeats(false);
+    }    
+
+    public void stopGame() {
+        if (gameTimer != null) {
+            gameTimer.stop();
+            gameRunning = false;
+        }
+    }    
+
+    public void pauseGame() {
+        if (gameRunning && gameTimer != null) {
+            gameTimer.stop();
+            gameRunning = false;
+        }
     }
     
     // Getters for components
     public ArrayList<Monster> getMonsters() {
-        return monsters;
+        return new ArrayList<>(monsters);
     }
     
     public JTextField getInputField() {
