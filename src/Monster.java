@@ -36,9 +36,6 @@ public class Monster {
     private int health = 1;
     private int size;
 
-    /**
-     * Constructor with three parameters, auto-assigns abilities based on chance
-     */
     public Monster(int x, int y, String word) {
         // Initialize word first to avoid potential null reference
         this.word = word != null ? word : "";
@@ -46,50 +43,64 @@ public class Monster {
         relativeX = x / (double) Constants.WIDTH;
         relativeY = y / (double) Constants.HEIGHT;
         this.size = Constants.MONSTER_SIZE;
-
-        // Auto-assign abilities based on chance
-        this.hasJamPower = Constants.RANDOM.nextInt(100) < Constants.JAM_POWER_CHANCE;     // Default 20% chance
-        this.hasExtraLife = Constants.RANDOM.nextInt(100) < 10;    // 10% chance
-        this.hasReverseInputPower = Constants.RANDOM.nextInt(100) < Constants.REVERSE_POWER_CHANCE; // (Add to Constants)
-        this.canSplit = Constants.RANDOM.nextInt(100) < Constants.SPLIT_CHANCE; // (Add to Constants)
         
-        if (canSplit) {
-            // Splitting monsters have 2 health
-            this.health = 2;
+        // Assign only one power to each monster
+        int powerRoll = Constants.RANDOM.nextInt(100);
+        
+        // Split is super rare 
+        if (powerRoll < Constants.SPLIT_CHANCE) {
+            this.canSplit = true;
+            this.hasJamPower = false;
+            this.hasExtraLife = false;
+            this.hasReverseInputPower = false;
+            this.health = 1; //health of boss
+        }
+        // Jam power
+        else if (powerRoll < Constants.SPLIT_CHANCE + Constants.JAM_POWER_CHANCE) {
+            this.hasJamPower = true;
+            this.canSplit = false;
+            this.hasExtraLife = false;
+            this.hasReverseInputPower = false;
+        }
+        // Reverse input power 
+        else if (powerRoll < Constants.SPLIT_CHANCE + Constants.JAM_POWER_CHANCE + Constants.REVERSE_POWER_CHANCE) {
+            this.hasReverseInputPower = true;
+            this.hasJamPower = false;
+            this.canSplit = false;
+            this.hasExtraLife = false;
+        }
+        // Extra life
+        else if (powerRoll < Constants.SPLIT_CHANCE + Constants.JAM_POWER_CHANCE + Constants.REVERSE_POWER_CHANCE + Constants.EXTRA_LIFE_CHANCE) {
+            this.hasExtraLife = true;
+            this.hasJamPower = false;
+            this.canSplit = false;
+            this.hasReverseInputPower = false;
+        }
+        // No power 
+        else {
+            this.hasJamPower = false;
+            this.hasExtraLife = false;
+            this.hasReverseInputPower = false;
+            this.canSplit = false;
         }
         
         this.isChildMonster = false;
     }
 
-    /**
-     * Constructor with four parameters, explicitly sets jam power
-     */
     public Monster(int x, int y, String word, boolean hasJamPower) {
-        // Initialize word first to avoid potential null reference
         this.word = word != null ? word : "";
 
         relativeX = x / (double) Constants.WIDTH;
         relativeY = y / (double) Constants.HEIGHT;
         this.size = Constants.MONSTER_SIZE;
-
-        // Explicitly set jam power
         this.hasJamPower = hasJamPower;
-        
-        // Auto-assign other powers based on chance
-        this.hasExtraLife = Constants.RANDOM.nextInt(100) < 10;    // 10% chance
-        this.hasReverseInputPower = Constants.RANDOM.nextInt(100) < Constants.REVERSE_POWER_CHANCE;
-        this.canSplit = Constants.RANDOM.nextInt(100) < Constants.SPLIT_CHANCE;
-        
-        if (canSplit) {
-            this.health = 2;
-        }
+        this.hasExtraLife = false;
+        this.hasReverseInputPower = false;
+        this.canSplit = false;
         
         this.isChildMonster = false;
     }
     
-    /**
-     * Constructor for child monsters (created when parent splits)
-     */
     public Monster(double relX, double relY, String word, int size, boolean isChild) {
         this.word = word != null ? word : "";
         this.relativeX = relX;
@@ -210,28 +221,19 @@ public class Monster {
         int indicatorY = realY - 5;
         int indicatorSize = 8;
         
-        // Draw jam power indicator (red)
+        // Draw only one power indicator per monster
         if (hasJamPower) {
             g.setColor(Color.RED);
-            g.fillOval(realX + scaledSize - 10, indicatorY, indicatorSize, indicatorSize);
-        }
-        
-        // Draw extra life indicator (green)
-        if (hasExtraLife) {
+            g.fillOval(realX + scaledSize - 20, indicatorY, indicatorSize, indicatorSize);
+        } else if (hasExtraLife) {
             g.setColor(Color.GREEN);
             g.fillOval(realX + scaledSize - 20, indicatorY, indicatorSize, indicatorSize);
-        }
-        
-        // Draw reverse input power indicator (blue)
-        if (hasReverseInputPower) {
+        } else if (hasReverseInputPower) {
             g.setColor(Color.BLUE);
-            g.fillOval(realX + scaledSize - 30, indicatorY, indicatorSize, indicatorSize);
-        }
-        
-        // Draw split indicator (yellow)
-        if (canSplit) {
+            g.fillOval(realX + scaledSize - 20, indicatorY, indicatorSize, indicatorSize);
+        } else if (canSplit) {
             g.setColor(Color.YELLOW);
-            g.fillOval(realX + scaledSize - 40, indicatorY, indicatorSize, indicatorSize);
+            g.fillOval(realX + scaledSize - 20, indicatorY, indicatorSize, indicatorSize);
         }
     }
 
