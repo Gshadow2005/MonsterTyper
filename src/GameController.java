@@ -157,6 +157,13 @@ public class GameController {
         gameRunning = true;
         gameTimer.start();
     }
+
+    public void pauseGame() {
+        if (gameRunning && gameTimer != null) {
+            gameTimer.stop();
+            gameRunning = false;
+        }
+    }
     
     // Getters for components
     public ArrayList<Monster> getMonsters() {
