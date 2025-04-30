@@ -6,6 +6,7 @@ import java.util.ArrayList;
 public class GamePanel extends JPanel {
     private GameController gameController;
     private static final Image SHOOTER_IMAGE;
+    private Image backgroundImage = null; // Background image instance
     private Monster targetMonster;
     private Timer animationTimer;
     private Timer removalTimer;
@@ -34,12 +35,22 @@ public class GamePanel extends JPanel {
         setBackground(Color.BLACK);
         gameController.setGamePanel(this);
         
+        // Try to load default background image
+        try {
+            ImageIcon bgIcon = new ImageIcon(GamePanel.class.getResource("/assets/BlackHomies.png"));
+            if (bgIcon.getIconWidth() > 0) {
+                backgroundImage = bgIcon.getImage();
+            }
+        } catch (Exception e) {
+            System.out.println("No default background image found or error loading it: " + e.getMessage());
+        }
+        
         // Setup animation timer
         animationTimer = new Timer(16, e -> updateAnimations());
         animationTimer.start();
         
         // Setup removal timer
-        removalTimer = new Timer(500, e -> { // 500ms delay
+        removalTimer = new Timer(500, e -> {
             if (!monstersToRemove.isEmpty()) {
                 for (Monster monster : monstersToRemove) {
                     gameController.removeMonster(monster);
@@ -50,10 +61,36 @@ public class GamePanel extends JPanel {
         removalTimer.setRepeats(false);
     }
     
+    /**
+     * Sets a new background image from the assets folder
+     * @param filename The name of the image file in the assets folder (e.g., "background.gif")
+     */
+    public void setBackgroundImage(String filename) {
+        try {
+            ImageIcon icon = new ImageIcon(GamePanel.class.getResource("/assets/" + filename));
+            if (icon.getIconWidth() > 0) {
+                backgroundImage = icon.getImage();
+                repaint();
+            } else {
+                System.out.println("Warning: Background image loaded but has invalid dimensions");
+            }
+        } catch (Exception e) {
+            System.out.println("Failed to load background image: " + e.getMessage());
+            backgroundImage = null;
+        }
+    }
+    
+    /**
+     * Removes the background image (sets background to black)
+     */
+    public void clearBackgroundImage() {
+        backgroundImage = null;
+        repaint();
+    }
+    
     private void updateAnimations() {
         if (!gameController.isGameRunning()) return;
         
-        // Update attack animation
         if (attackFrame > 0) {
             attackFrame--;
             if (attackFrame == 0 && targetMonster != null) {
@@ -61,12 +98,10 @@ public class GamePanel extends JPanel {
             }
         }
         
-        // Update shake animation
         if (shakeFrame > 0) {
             shakeFrame--;
         }
         
-        // Find target monster based on current input
         if (attackFrame == 0) {
             Monster newTarget = findTargetMonster();
             if (newTarget != null && newTarget != targetMonster) {
@@ -84,26 +119,18 @@ public class GamePanel extends JPanel {
         boolean hasReverseInputPower = monster.hasReverseInputPower();
         boolean canSplit = monster.canSplit();
 
-        // Trigger hit animation
         monster.hit();
-        
-        // Start shake animation
         shakeFrame = SHAKE_DURATION;
-
-        // Decrease monster health
         monster.decreaseHealth();
 
-        // Check if monster should be removed
         if (monster.getHealth() <= 0) {
             if (canSplit) {
-                // Add child monsters
                 Monster[] children = monster.split();
                 for (Monster child : children) {
                     gameController.getMonsters().add(child);
                 }
             }
 
-            // Apply monster powers
             if (hasJamPower) {
                 gameController.startKeyboardJam();
             }
@@ -115,14 +142,8 @@ public class GamePanel extends JPanel {
             }
 
             gameController.increaseScore();
-            
-            // Mark monster for removal after delay
             monstersToRemove.add(monster);
-            
-            // Start removal timer
             removalTimer.restart();
-            
-            // Clear target monster and input
             targetMonster = null;
             gameController.getInputField().setText("");
         }
@@ -132,7 +153,6 @@ public class GamePanel extends JPanel {
         ArrayList<Monster> monsters = gameController.getMonsters();
         if (monsters.isEmpty()) return null;
         
-        // Find the monster that matches the current input
         String currentInput = gameController.getInputField().getText().trim().toLowerCase();
         if (currentInput.isEmpty()) return null;
         
@@ -154,20 +174,29 @@ public class GamePanel extends JPanel {
         super.paintComponent(g);
         Graphics2D g2d = (Graphics2D) g;
         
-        int height = getHeight();
         int width = getWidth();
+        int height = getHeight();
 
-        // Draw base (left side)
-        g.setColor(Color.BLUE);
-        g.fillRect(0, 0, 0, height);
+        // Draw background
+        if (backgroundImage != null) {
+            // Draw background image scaled to fit the panel
+            g.drawImage(backgroundImage, 0, 0, width, height, this);
+        } else {
+            // Fallback to black background
+            g.setColor(Color.BLACK);
+            g.fillRect(0, 0, width, height);
+        }
+
+        // Draw semi-transparent black overlay on left side
+        g.setColor(new Color(0, 0, 0, 150));
+        g.fillRect(0, 0, 80, height);
         
-        // Draw shooter at left center with rotation
+        // Draw shooter
         if (SHOOTER_IMAGE != null) {
             int shooterSize = 60;
             int shooterX = 10;
             int shooterY = (height - shooterSize) / 2;
             
-            // Calculate rotation angle if there's a target
             double angle = 0;
             if (targetMonster != null && !monstersToRemove.contains(targetMonster)) {
                 int targetX = targetMonster.getX(width) + targetMonster.getSize() / 2;
@@ -178,59 +207,40 @@ public class GamePanel extends JPanel {
                 angle = Math.atan2(targetY - shooterCenterY, targetX - shooterCenterX);
             }
             
-            // Save the current transform
             AffineTransform oldTransform = g2d.getTransform();
-            
-            // Translate to the center of the shooter
             g2d.translate(shooterX + shooterSize/2, shooterY + shooterSize/2);
-            
-            // Rotate around the center
             g2d.rotate(angle);
-            
-            // Draw the shooter image centered
             g2d.drawImage(SHOOTER_IMAGE, -shooterSize/2, -shooterSize/2, shooterSize, shooterSize, null);
             
-            // Draw attack effect if attacking
             if (attackFrame > 0 && targetMonster != null && !monstersToRemove.contains(targetMonster)) {
                 float alpha = (float)attackFrame / MAX_ATTACK_FRAMES;
                 g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
                 g2d.setColor(Color.YELLOW);
-                
-                // Draw beam from center to right side
                 g2d.setStroke(new BasicStroke(5));
                 g2d.drawLine(0, 0, shooterSize * 3, 0);
-                
-                // Draw muzzle flash
                 g2d.fillOval(-shooterSize/4, -shooterSize/4, shooterSize/2, shooterSize/2);
                 g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
             }
             
-            // Restore the original transform
             g2d.setTransform(oldTransform);
         }
 
         // Draw monsters
         ArrayList<Monster> monsters = gameController.getMonsters();
         for (Monster monster : monsters) {
-            // Save the current transform
             AffineTransform monsterTransform = g2d.getTransform();
             
-            // Apply shake effect to the monster being hit
             if (monster == targetMonster && shakeFrame > 0) {
-                // Calculate shake offset based on time
                 double shakeProgress = (double)shakeFrame / SHAKE_DURATION;
-                int shakeOffset = (int)(10 * Math.sin(shakeProgress * Math.PI * 4)); // Faster shake
+                int shakeOffset = (int)(10 * Math.sin(shakeProgress * Math.PI * 4));
                 g2d.translate(shakeOffset, 0);
             }
 
             monster.draw(g, width, height);
-            
-            // Restore the transform for the next monster
             g2d.setTransform(monsterTransform);
         }
     }
     
-    // Public method to trigger an attack on a specific monster
     public void attackMonster(Monster monster) {
         if (monster != null) {
             targetMonster = monster;
