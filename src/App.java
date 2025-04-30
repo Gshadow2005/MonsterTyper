@@ -40,19 +40,29 @@ public class App extends JFrame implements GameController.GameEventListener {
         // Add main panel to frame
         add(mainPanel);
 
-        boolean wordsLoaded = false;
-        for (int difficulty : Constants.DIFFICULTY_WORDS.keySet()) {
-            if (Constants.DIFFICULTY_WORDS.get(difficulty).length > 0) {
-                wordsLoaded = true;
-                break;
-            }
+        boolean easyWordsLoaded = Constants.DIFFICULTY_WORDS.get(Constants.DIFFICULTY_EASY).length > 0;
+        boolean mediumWordsLoaded = Constants.DIFFICULTY_WORDS.get(Constants.DIFFICULTY_MEDIUM).length > 0;
+        boolean hardWordsLoaded = Constants.DIFFICULTY_WORDS.get(Constants.DIFFICULTY_HARD).length > 0;
+
+        if (!easyWordsLoaded) {
+            JOptionPane.showMessageDialog(this, 
+                "Failed to load easy words from file. Please check if 'assets/words/easy_words.txt' exists.", 
+                "Error Loading Words", 
+                JOptionPane.WARNING_MESSAGE);
         }
         
-        if (!wordsLoaded) {
+        if (!mediumWordsLoaded) {
             JOptionPane.showMessageDialog(this, 
-                "Failed to load words from file. Please check if 'assets/words.txt' exists.", 
+                "Failed to load medium words from file. Please check if 'assets/words/medium_words.txt' exists.", 
                 "Error Loading Words", 
-                JOptionPane.ERROR_MESSAGE);
+                JOptionPane.WARNING_MESSAGE);
+        }
+        
+        if (!hardWordsLoaded) {
+            JOptionPane.showMessageDialog(this, 
+                "Failed to load hard words from file. Please check if 'assets/words/hard_words.txt' exists.", 
+                "Error Loading Words", 
+                JOptionPane.WARNING_MESSAGE);
         }
     }
     
