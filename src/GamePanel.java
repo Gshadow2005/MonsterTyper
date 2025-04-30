@@ -2,14 +2,18 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
-import java.util.List;
 
 public class GamePanel extends JPanel {
     private GameController gameController;
     private static final Image SHOOTER_IMAGE;
-    private List<Projectile> projectiles;
     private Monster targetMonster;
-    private Timer projectileTimer;
+    private Timer animationTimer;
+    private Timer removalTimer;
+    private int attackFrame = 0;
+    private static final int MAX_ATTACK_FRAMES = 10;
+    private static final int SHAKE_DURATION = 20;
+    private int shakeFrame = 0;
+    private ArrayList<Monster> monstersToRemove = new ArrayList<>();
     
     static {
         ImageIcon icon = null;
@@ -30,54 +34,48 @@ public class GamePanel extends JPanel {
         setBackground(Color.BLACK);
         gameController.setGamePanel(this);
         
-        // Initialize projectiles list
-        projectiles = new ArrayList<>();
+        // Setup animation timer
+        animationTimer = new Timer(16, e -> updateAnimations());
+        animationTimer.start();
         
-        // Setup projectile timer
-        projectileTimer = new Timer(16, e -> updateProjectiles());
-        projectileTimer.start();
+        // Setup removal timer
+        removalTimer = new Timer(500, e -> { // 500ms delay
+            if (!monstersToRemove.isEmpty()) {
+                for (Monster monster : monstersToRemove) {
+                    gameController.removeMonster(monster);
+                }
+                monstersToRemove.clear();
+            }
+        });
+        removalTimer.setRepeats(false);
     }
     
-    private void updateProjectiles() {
+    private void updateAnimations() {
         if (!gameController.isGameRunning()) return;
         
-        // Update existing projectiles and check for collisions
-        projectiles.removeIf(projectile -> {
-            projectile.update();
-            
-            // Check if projectile reached its target
-            if (projectile.hasReachedTarget()) {
-                return true;
+        // Update attack animation
+        if (attackFrame > 0) {
+            attackFrame--;
+            if (attackFrame == 0 && targetMonster != null) {
+                handleMonsterHit(targetMonster);
             }
-            
-            // Check for collisions with monsters
-            ArrayList<Monster> monsters = gameController.getMonsters();
-            for (Monster monster : monsters) {
-                if (projectile.intersects(monster, getWidth(), getHeight())) {
-                    // Handle monster hit
-                    handleMonsterHit(monster);
-                    return true; // Remove the projectile
-                }
-            }
-            
-            return projectile.isOutOfBounds(getWidth(), getHeight());
-        });
+        }
         
-        // Check if we need to shoot at a new target
-        if (targetMonster != null) {
-            Monster currentTarget = findTargetMonster();
-            if (currentTarget != targetMonster) {
-                targetMonster = currentTarget;
-                if (targetMonster != null) {
-                    shootAtMonster(targetMonster);
-                }
-            }
-        } else {
-            targetMonster = findTargetMonster();
-            if (targetMonster != null) {
+        // Update shake animation
+        if (shakeFrame > 0) {
+            shakeFrame--;
+        }
+        
+        // Find target monster based on current input
+        if (attackFrame == 0) {
+            Monster newTarget = findTargetMonster();
+            if (newTarget != null && newTarget != targetMonster) {
+                targetMonster = newTarget;
                 shootAtMonster(targetMonster);
             }
         }
+        
+        repaint();
     }
     
     private void handleMonsterHit(Monster monster) {
@@ -85,9 +83,17 @@ public class GamePanel extends JPanel {
         boolean hasExtraLife = monster.hasExtraLife();
         boolean hasReverseInputPower = monster.hasReverseInputPower();
         boolean canSplit = monster.canSplit();
+
+        // Trigger hit animation
+        monster.hit();
         
+        // Start shake animation
+        shakeFrame = SHAKE_DURATION;
+
         // Decrease monster health
         monster.decreaseHealth();
+
+        // Check if monster should be removed
         if (monster.getHealth() <= 0) {
             if (canSplit) {
                 // Add child monsters
@@ -97,8 +103,6 @@ public class GamePanel extends JPanel {
                 }
             }
 
-            gameController.getMonsters().remove(monster);
-            
             // Apply monster powers
             if (hasJamPower) {
                 gameController.startKeyboardJam();
@@ -109,8 +113,17 @@ public class GamePanel extends JPanel {
             if (hasReverseInputPower) {
                 gameController.startInputScramble();
             }
-            
+
             gameController.increaseScore();
+            
+            // Mark monster for removal after delay
+            monstersToRemove.add(monster);
+            
+            // Start removal timer
+            removalTimer.restart();
+            
+            // Clear target monster and input
+            targetMonster = null;
             gameController.getInputField().setText("");
         }
     }
@@ -132,13 +145,8 @@ public class GamePanel extends JPanel {
     }
     
     private void shootAtMonster(Monster monster) {
-        int shooterX = 10 + 30; // Center of shooter (10 + half of shooter size)
-        int shooterY = (getHeight() - 60) / 2 + 30; // Center of shooter
-        
-        int targetX = monster.getX(getWidth()) + monster.getSize() / 2;
-        int targetY = monster.getY(getHeight()) + monster.getSize() / 2;
-        
-        projectiles.add(new Projectile(shooterX, shooterY, targetX, targetY));
+        targetMonster = monster;
+        attackFrame = MAX_ATTACK_FRAMES;
     }
     
     @Override
@@ -151,7 +159,7 @@ public class GamePanel extends JPanel {
 
         // Draw base (left side)
         g.setColor(Color.BLUE);
-        g.fillRect(0, 0, 5, height);
+        g.fillRect(0, 0, 0, height);
         
         // Draw shooter at left center with rotation
         if (SHOOTER_IMAGE != null) {
@@ -161,7 +169,7 @@ public class GamePanel extends JPanel {
             
             // Calculate rotation angle if there's a target
             double angle = 0;
-            if (targetMonster != null) {
+            if (targetMonster != null && !monstersToRemove.contains(targetMonster)) {
                 int targetX = targetMonster.getX(width) + targetMonster.getSize() / 2;
                 int targetY = targetMonster.getY(height) + targetMonster.getSize() / 2;
                 int shooterCenterX = shooterX + shooterSize / 2;
@@ -182,76 +190,51 @@ public class GamePanel extends JPanel {
             // Draw the shooter image centered
             g2d.drawImage(SHOOTER_IMAGE, -shooterSize/2, -shooterSize/2, shooterSize, shooterSize, null);
             
+            // Draw attack effect if attacking
+            if (attackFrame > 0 && targetMonster != null && !monstersToRemove.contains(targetMonster)) {
+                float alpha = (float)attackFrame / MAX_ATTACK_FRAMES;
+                g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+                g2d.setColor(Color.YELLOW);
+                
+                // Draw beam from center to right side
+                g2d.setStroke(new BasicStroke(5));
+                g2d.drawLine(0, 0, shooterSize * 3, 0);
+                
+                // Draw muzzle flash
+                g2d.fillOval(-shooterSize/4, -shooterSize/4, shooterSize/2, shooterSize/2);
+                g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+            }
+            
             // Restore the original transform
             g2d.setTransform(oldTransform);
-        }
-
-        // Draw projectiles
-        for (Projectile projectile : projectiles) {
-            projectile.draw(g);
         }
 
         // Draw monsters
         ArrayList<Monster> monsters = gameController.getMonsters();
         for (Monster monster : monsters) {
+            // Save the current transform
+            AffineTransform monsterTransform = g2d.getTransform();
+            
+            // Apply shake effect to the monster being hit
+            if (monster == targetMonster && shakeFrame > 0) {
+                // Calculate shake offset based on time
+                double shakeProgress = (double)shakeFrame / SHAKE_DURATION;
+                int shakeOffset = (int)(10 * Math.sin(shakeProgress * Math.PI * 4)); // Faster shake
+                g2d.translate(shakeOffset, 0);
+            }
+
             monster.draw(g, width, height);
+            
+            // Restore the transform for the next monster
+            g2d.setTransform(monsterTransform);
         }
     }
     
-    private class Projectile {
-        private double x, y;
-        private double targetX, targetY;
-        private static final double SPEED = 10.0;
-        private static final int SIZE = 8;
-        private static final double TARGET_THRESHOLD = 5.0; // Distance threshold to consider target reached
-        
-        public Projectile(int startX, int startY, int targetX, int targetY) {
-            this.x = startX;
-            this.y = startY;
-            this.targetX = targetX;
-            this.targetY = targetY;
-        }
-        
-        public void update() {
-            double dx = targetX - x;
-            double dy = targetY - y;
-            double distance = Math.sqrt(dx * dx + dy * dy);
-            
-            if (distance > 0) {
-                x += (dx / distance) * SPEED;
-                y += (dy / distance) * SPEED;
-            }
-        }
-        
-        public void draw(Graphics g) {
-            g.setColor(Color.YELLOW);
-            g.fillOval((int)x - SIZE/2, (int)y - SIZE/2, SIZE, SIZE);
-        }
-        
-        public boolean isOutOfBounds(int width, int height) {
-            return x < 0 || x > width || y < 0 || y > height;
-        }
-        
-        public boolean hasReachedTarget() {
-            double dx = targetX - x;
-            double dy = targetY - y;
-            double distance = Math.sqrt(dx * dx + dy * dy);
-            return distance <= TARGET_THRESHOLD;
-        }
-        
-        public boolean intersects(Monster monster, int panelWidth, int panelHeight) {
-            int monsterX = monster.getX(panelWidth);
-            int monsterY = monster.getY(panelHeight);
-            int monsterSize = monster.getSize();
-            
-            // Simple circle-rectangle collision detection
-            double closestX = Math.max(monsterX, Math.min(x, monsterX + monsterSize));
-            double closestY = Math.max(monsterY, Math.min(y, monsterY + monsterSize));
-            
-            double distanceX = x - closestX;
-            double distanceY = y - closestY;
-            
-            return (distanceX * distanceX + distanceY * distanceY) <= (SIZE/2 * SIZE/2);
+    // Public method to trigger an attack on a specific monster
+    public void attackMonster(Monster monster) {
+        if (monster != null) {
+            targetMonster = monster;
+            shootAtMonster(monster);
         }
     }
 }
