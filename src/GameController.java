@@ -143,8 +143,9 @@ public class GameController {
     private void spawnMonster() {
         if (!gameRunning) return;
         
-        // Create a new monster with random word
-        String word = Constants.WORDS[Constants.RANDOM.nextInt(Constants.WORDS.length)];
+        // Get words for current difficulty level
+        String[] currentWords = Constants.DIFFICULTY_WORDS.get(Constants.currentDifficulty);
+        String word = currentWords[Constants.RANDOM.nextInt(currentWords.length)];
         int x = Constants.WIDTH - Constants.MONSTER_SIZE;
         int y = Constants.RANDOM.nextInt(Constants.HEIGHT - 100 - Constants.MONSTER_SIZE);
         
@@ -256,6 +257,66 @@ public class GameController {
             Constants.currentMonsterSpeed = Constants.MONSTER_MAX_SPEED;
         }
     }
+
+    private void updateDifficultyLevel() {
+        int oldDifficulty = Constants.currentDifficulty;
+
+        if (score >= Constants.HARD_DIFFICULTY_THRESHOLD) {
+            Constants.currentDifficulty = Constants.DIFFICULTY_HARD;
+        } else if (score >= Constants.MEDIUM_DIFFICULTY_THRESHOLD) {
+            Constants.currentDifficulty = Constants.DIFFICULTY_MEDIUM;
+        } else {
+            Constants.currentDifficulty = Constants.DIFFICULTY_EASY;
+        }
+
+        if (oldDifficulty != Constants.currentDifficulty) {
+            notifyDifficultyChange();
+        }
+    }
+    
+    private void notifyDifficultyChange() {
+        String difficultyName;
+        Color notificationColor;
+        
+        switch (Constants.currentDifficulty) {
+            case Constants.DIFFICULTY_MEDIUM:
+                difficultyName = "Medium";
+                notificationColor = Color.YELLOW;
+                break;
+            case Constants.DIFFICULTY_HARD:
+                difficultyName = "Hard";
+                notificationColor = Color.RED;
+                break;
+            default:
+                difficultyName = "Easy";
+                notificationColor = Color.GREEN;
+                break;
+        }
+        
+        // Show difficulty change notification
+        JLabel notification = new JLabel("Difficulty increased to " + difficultyName + "!");
+        notification.setForeground(notificationColor);
+        notification.setFont(new Font("Arial", Font.BOLD, 16));
+        
+        JLayeredPane layeredPane = gamePanel.getRootPane().getLayeredPane();
+        notification.setBounds(
+            (gamePanel.getWidth() - 300) / 2, 
+            gamePanel.getHeight() / 3, 
+            300, 
+            30
+        );
+        
+        layeredPane.add(notification, JLayeredPane.POPUP_LAYER);
+        
+        // Remove notification after 2 seconds
+        Timer notificationTimer = new Timer(2000, e -> {
+            layeredPane.remove(notification);
+            layeredPane.repaint();
+            ((Timer)e.getSource()).stop();
+        });
+        notificationTimer.setRepeats(false);
+        notificationTimer.start();
+    }    
     
     // Input scrambling functionality
     public void startInputScramble() {
@@ -320,6 +381,9 @@ public class GameController {
     public void increaseScore() {
         score += Constants.SCORE_PER_MONSTER;
         increaseMonsterSpeed();
+        
+        // Check if we need to increase difficulty
+        updateDifficultyLevel();
         
         if (scoreLabel != null) {
             scoreLabel.setText("Score: " + score);
@@ -409,6 +473,9 @@ public class GameController {
         monsters.clear();
         score = 0;
         lives = Constants.INITIAL_LIVES;
+        
+        // Reset difficulty to easy
+        Constants.currentDifficulty = Constants.DIFFICULTY_EASY;
         
         if (scoreLabel != null) {
             scoreLabel.setText("Score: " + score);
