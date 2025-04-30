@@ -177,7 +177,7 @@ public class GameController {
     }
     
     private void checkInput() {
-        if (!gameRunning || isKeyboardJammed || inputField == null) return;
+        if (!gameRunning || isKeyboardJammed || inputField == null || gamePanel == null) return;
         
         String input = inputField.getText().trim().toLowerCase();
         if (input.isEmpty()) return;
@@ -191,10 +191,20 @@ public class GameController {
         }
 
         if (monsterToHit != null) {
+            // Trigger animation through the GamePanel
+            if (gamePanel instanceof GamePanel) {
+                ((GamePanel) gamePanel).attackMonster(monsterToHit);
+                return; // The animation will handle the rest
+            }
+            
+            // If we don't have the proper GamePanel instance, fallback to direct handling
             boolean hasJamPower = monsterToHit.hasJamPower();
             boolean hasExtraLife = monsterToHit.hasExtraLife();
             boolean hasReverseInputPower = monsterToHit.hasReverseInputPower();
             boolean canSplit = monsterToHit.canSplit();
+            
+            // Trigger hit animation
+            monsterToHit.hit();
             
             // Decrease monster health
             monsterToHit.decreaseHealth();
@@ -217,11 +227,12 @@ public class GameController {
                     increaseLife();
                 }
                 if (hasReverseInputPower) {
-                    startInputScramble(); // Changed from startInputReverse
+                    startInputScramble();
                 }
+                
+                increaseScore();
             }
-
-            increaseScore();
+            
             inputField.setText("");
             
         } else {
