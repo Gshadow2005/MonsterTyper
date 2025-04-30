@@ -176,9 +176,51 @@ public class App extends JFrame implements GameController.GameEventListener {
         JTextField inputField = gameController.getInputField();
         styleInputField(inputField);
 
+        JPanel indicatorPanel = new JPanel(new BorderLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                if (gameController != null) {
+                    int indicatorSize = 20;
+                    int indicatorX = 10;
+                    int indicatorY = 10;
+                    
+                    // Keyboard jam indicator (red)
+                    if (gameController.isKeyboardJammed()) {
+                        // Draw glow effect
+                        g2.setColor(new Color(255, 0, 0, 100));
+                        g2.fillOval(indicatorX - 5, indicatorY - 5, indicatorSize + 10, indicatorSize + 10);
+                        
+                        // Draw main indicator
+                        g2.setColor(new Color(255, 0, 0, 255));
+                        g2.fillOval(indicatorX, indicatorY, indicatorSize, indicatorSize);
+                    }
+                    
+                    // Input scramble indicator (blue)
+                    if (gameController.isInputScrambled()) {
+                        // Draw glow effect
+                        g2.setColor(new Color(0, 0, 255, 100));
+                        g2.fillOval(indicatorX - 5, indicatorY - 5, indicatorSize + 10, indicatorSize + 10);
+                        
+                        // Draw main indicator
+                        g2.setColor(new Color(0, 0, 255, 255));
+                        g2.fillOval(indicatorX, indicatorY, indicatorSize, indicatorSize);
+                    }
+                }
+                
+                g2.dispose();
+            }
+        };
+        
+        indicatorPanel.setOpaque(false);
+        indicatorPanel.add(inputField, BorderLayout.CENTER);
+        
         JPanel centerPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         centerPanel.setOpaque(false);
-        centerPanel.add(inputField);
+        centerPanel.add(indicatorPanel);
         
         inputPanel.add(Box.createVerticalGlue());
         inputPanel.add(centerPanel);
@@ -202,10 +244,13 @@ public class App extends JFrame implements GameController.GameEventListener {
         inputField.setUI(new javax.swing.plaf.basic.BasicTextFieldUI() {
             @Override
             protected void paintBackground(Graphics g) {
-
                 Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                // Draw base background
                 g2.setColor(new Color(50, 50, 80, 80));
                 g2.fillRoundRect(0, 0, inputField.getWidth(), inputField.getHeight(), 10, 10);
+                
                 g2.dispose();
             }
         });
