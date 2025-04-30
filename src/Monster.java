@@ -35,6 +35,8 @@ public class Monster {
     private boolean isChildMonster;
     private int health = 1;
     private int size;
+    private int hitFlashFrame = 0;
+    private static final int MAX_HIT_FLASH_FRAMES = 5;
 
     public Monster(int x, int y, String word) {
         // Initialize word first to avoid potential null reference
@@ -124,6 +126,11 @@ public class Monster {
         }
         double moveAmount = pixelsToMove / Constants.WIDTH;
         relativeX -= moveAmount;
+        
+        // Update hit flash animation
+        if (hitFlashFrame > 0) {
+            hitFlashFrame--;
+        }
     }
 
     public void draw(Graphics g, int panelWidth, int panelHeight) {
@@ -142,6 +149,20 @@ public class Monster {
         ));
 
         AffineTransform oldTransform = g2d.getTransform();
+
+        // Apply hit flash effect
+        if (hitFlashFrame > 0) {
+            // Add a slight "bounce" effect when hit
+            int bounceOffset = (int)(3 * Math.sin(hitFlashFrame * Math.PI / MAX_HIT_FLASH_FRAMES));
+            g2d.translate(0, bounceOffset);
+            
+            // Flash overlay
+            float alpha = (float)hitFlashFrame / MAX_HIT_FLASH_FRAMES;
+            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+            g2d.setColor(Color.WHITE);
+            g2d.fillRect(realX - 5, realY - 5, scaledSize + 10, scaledSize + 10);
+            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+        }
 
         // Flip image horizontally
         g2d.translate(realX + scaledSize, realY);
@@ -175,7 +196,12 @@ public class Monster {
         float healthPercent = health / (canSplit ? 2.0f : 1.0f);
         int filledWidth = (int)(healthBarWidth * healthPercent);
         
-        g.setColor(Color.RED);
+        // Flash effect when hit
+        if (hitFlashFrame > 0) {
+            g.setColor(Color.WHITE);
+        } else {
+            g.setColor(Color.RED);
+        }
         g.fillRect(healthBarX, healthBarY, filledWidth, healthBarHeight);
     }
     
@@ -186,6 +212,18 @@ public class Monster {
             panelWidth / (double) Constants.WIDTH,
             panelHeight / (double) Constants.HEIGHT
         ));
+        
+        // Apply hit animation for placeholder monsters too
+        if (hitFlashFrame > 0) {
+            // Draw a white halo/glow effect
+            g.setColor(new Color(255, 255, 255, 50 + hitFlashFrame * 20));
+            g.fillOval(
+                realX - 5, 
+                realY - 5, 
+                scaledSize + 10, 
+                scaledSize + 10
+            );
+        }
         
         // Draw a simple placeholder rectangle
         if (isChildMonster) {
@@ -207,8 +245,22 @@ public class Monster {
             return;
         }
         
-        g.setColor(Color.WHITE);
-        g.setFont(new Font("Arial", Font.BOLD, isChildMonster ? 10 : 12));
+        // Highlight word if being hit
+        if (hitFlashFrame > 0) {
+            // Use a highlighted color during flash
+            g.setColor(new Color(255, 255, 0)); // Yellow highlight
+            
+            // Scale effect during hit
+            int fontScale = isChildMonster ? 
+                10 + (int)(hitFlashFrame * 0.6) : 
+                12 + (int)(hitFlashFrame * 0.8);
+            g.setFont(new Font("Arial", Font.BOLD, fontScale));
+        } else {
+            // Normal color
+            g.setColor(Color.WHITE);
+            g.setFont(new Font("Arial", Font.BOLD, isChildMonster ? 10 : 12));
+        }
+        
         FontMetrics fm = g.getFontMetrics();
         int textWidth = fm.stringWidth(word);
         int textX = realX + (scaledSize - textWidth) / 2;
@@ -312,5 +364,9 @@ public class Monster {
         }
         
         return children;
+    }
+
+    public void hit() {
+        hitFlashFrame = MAX_HIT_FLASH_FRAMES;
     }
 }
