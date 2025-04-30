@@ -40,7 +40,15 @@ public class App extends JFrame implements GameController.GameEventListener {
         // Add main panel to frame
         add(mainPanel);
 
-        if (Constants.WORDS.length == 0) {
+        boolean wordsLoaded = false;
+        for (int difficulty : Constants.DIFFICULTY_WORDS.keySet()) {
+            if (Constants.DIFFICULTY_WORDS.get(difficulty).length > 0) {
+                wordsLoaded = true;
+                break;
+            }
+        }
+        
+        if (!wordsLoaded) {
             JOptionPane.showMessageDialog(this, 
                 "Failed to load words from file. Please check if 'assets/words.txt' exists.", 
                 "Error Loading Words", 
