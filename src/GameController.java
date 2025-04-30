@@ -105,7 +105,7 @@ public class GameController {
     }
     
     private void setupClearInputTimer() {
-        clearInputTimer = new Timer(2100, e -> { // 2.1 sec input delete
+        clearInputTimer = new Timer(2500, e -> { // 2.5 sec input delete
             inputField.setText("");
             ((Timer)e.getSource()).stop(); 
         });

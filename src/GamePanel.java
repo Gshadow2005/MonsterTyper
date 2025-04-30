@@ -151,7 +151,7 @@ public class GamePanel extends JPanel {
 
         // Draw base (left side)
         g.setColor(Color.BLUE);
-        g.fillRect(0, 0, 5, height);
+        g.fillRect(0, 0, 0, height);
         
         // Draw shooter at left center with rotation
         if (SHOOTER_IMAGE != null) {
