@@ -42,77 +42,63 @@ public class Constants {
     
     // Score thresholds for difficulty changes
     public static final int MEDIUM_DIFFICULTY_THRESHOLD = 200;
-    public static final int HARD_DIFFICULTY_THRESHOLD = 400; 
-    public static int currentDifficulty = DIFFICULTY_EASY; // Current difficulty level
+    public static final int HARD_DIFFICULTY_THRESHOLD = 400;
     
-    // Word lists for different difficulty levels
-    public static final Map<Integer, String[]> DIFFICULTY_WORDS = loadWordsByDifficulty("assets/words.txt");
+    // Current difficulty level
+    public static int currentDifficulty = DIFFICULTY_EASY;
+    
+    // Word files
+    private static final String WORDS_FOLDER = "assets/words/";
+    private static final String EASY_WORDS_FILE = WORDS_FOLDER + "easy_words.txt";
+    private static final String MEDIUM_WORDS_FILE = WORDS_FOLDER + "medium_words.txt";
+    private static final String HARD_WORDS_FILE = WORDS_FOLDER + "hard_words.txt";
+
+    public static final Map<Integer, String[]> DIFFICULTY_WORDS = loadAllWordFiles();
     
     // Random generator for the game
     public static final Random RANDOM = new Random();
 
-    private static Map<Integer, String[]> loadWordsByDifficulty(String filePath) {
-        Map<Integer, List<String>> wordLists = new HashMap<>();
-        wordLists.put(DIFFICULTY_EASY, new ArrayList<>());
-        wordLists.put(DIFFICULTY_MEDIUM, new ArrayList<>());
-        wordLists.put(DIFFICULTY_HARD, new ArrayList<>());
+    private static Map<Integer, String[]> loadAllWordFiles() {
+        Map<Integer, String[]> difficultyWords = new HashMap<>();
         
+        // Load words
+        difficultyWords.put(DIFFICULTY_EASY, loadWordsFromFile(EASY_WORDS_FILE));
+        difficultyWords.put(DIFFICULTY_MEDIUM, loadWordsFromFile(MEDIUM_WORDS_FILE));
+        difficultyWords.put(DIFFICULTY_HARD, loadWordsFromFile(HARD_WORDS_FILE));
+        
+        // ERRROR HANDLING 
+        if (difficultyWords.get(DIFFICULTY_EASY).length == 0) {
+            difficultyWords.put(DIFFICULTY_EASY, new String[]{"ERROR EASY"});
+        }
+        if (difficultyWords.get(DIFFICULTY_MEDIUM).length == 0) {
+            difficultyWords.put(DIFFICULTY_MEDIUM, new String[]{"ERROR MEDIUM"});
+        }
+        if (difficultyWords.get(DIFFICULTY_HARD).length == 0) {
+            difficultyWords.put(DIFFICULTY_HARD, new String[]{"ERROR HARD"});
+        }
+        
+        return difficultyWords;
+    }
+    
+    private static String[] loadWordsFromFile(String filePath) {
+        List<String> wordList = new ArrayList<>();
         try (InputStream inputStream = Constants.class.getClassLoader().getResourceAsStream(filePath)) {
             if (inputStream == null) {
                 System.err.println("File not found: " + filePath);
-                return convertToArrayMap(wordLists); 
+                return new String[0]; 
             }
-            
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
                 String line;
-                int currentSection = DIFFICULTY_EASY; // Default to easy
-                
                 while ((line = reader.readLine()) != null) {
                     line = line.trim();
-                    
-                    // Check for section markers
-                    if (line.equals("## EASY ##")) {
-                        currentSection = DIFFICULTY_EASY;
-                        continue;
-                    } else if (line.equals("## MEDIUM ##")) {
-                        currentSection = DIFFICULTY_MEDIUM;
-                        continue;
-                    } else if (line.equals("## HARD ##")) {
-                        currentSection = DIFFICULTY_HARD;
-                        continue;
-                    }
-                    
-                    // Add word to appropriate list if not empty
                     if (!line.isEmpty()) {
-                        wordLists.get(currentSection).add(line);
+                        wordList.add(line);
                     }
                 }
             }
         } catch (IOException e) {
             System.err.println("Error loading words from file: " + e.getMessage());
         }
-        
-        // Convert lists to arrays
-        return convertToArrayMap(wordLists);
-    }
-    
-    private static Map<Integer, String[]> convertToArrayMap(Map<Integer, List<String>> wordLists) {
-        Map<Integer, String[]> result = new HashMap<>();
-        
-        for (Map.Entry<Integer, List<String>> entry : wordLists.entrySet()) {
-            result.put(entry.getKey(), entry.getValue().toArray(new String[0]));
-        }
-
-        if (result.get(DIFFICULTY_EASY).length == 0) {
-            result.put(DIFFICULTY_EASY, new String[]{"error easy"});
-        }
-        if (result.get(DIFFICULTY_MEDIUM).length == 0) {
-            result.put(DIFFICULTY_MEDIUM, new String[]{"error medium"});
-        }
-        if (result.get(DIFFICULTY_HARD).length == 0) {
-            result.put(DIFFICULTY_HARD, new String[]{"error hard"});
-        }
-        
-        return result;
+        return wordList.toArray(new String[0]);
     }
 }
