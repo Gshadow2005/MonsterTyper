@@ -20,8 +20,8 @@ public class Constants {
     
     // Monster power chances (percentage)
     public static final int SPLIT_CHANCE = 1;    
-    public static final int JAM_POWER_CHANCE = 3;  
-    public static final int REVERSE_POWER_CHANCE = 3; 
+    public static final int JAM_POWER_CHANCE = 30;  
+    public static final int REVERSE_POWER_CHANCE = 30; 
     public static final int EXTRA_LIFE_CHANCE = 1;  
     
     // Power duration

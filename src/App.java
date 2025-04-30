@@ -1,5 +1,6 @@
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
@@ -186,6 +187,7 @@ public class App extends JFrame implements GameController.GameEventListener {
         JTextField inputField = gameController.getInputField();
         styleInputField(inputField);
 
+        // Create a custom panel that wraps the input field and draws indicators
         JPanel indicatorPanel = new JPanel(new BorderLayout()) {
             @Override
             protected void paintComponent(Graphics g) {
@@ -195,21 +197,22 @@ public class App extends JFrame implements GameController.GameEventListener {
                 
                 if (gameController != null) {
                     int indicatorSize = 10;
-                    int indicatorX = 10;
-                    int indicatorY = 10;
+                    // Position relative to the input field's border
+                    int indicatorX = 5;  // Inside the border
+                    int indicatorY = 5;  // Inside the border
                     
                     // Keyboard jam indicator (red)
                     if (gameController.isKeyboardJammed()) {
                         // Draw main indicator
                         g2.setColor(new Color(255, 0, 0, 255));
-                        g2.fillOval(indicatorX - 2, indicatorY - 4, indicatorSize, indicatorSize);
+                        g2.fillOval(indicatorX, indicatorY, indicatorSize, indicatorSize);
                     }
                     
                     // Input scramble indicator (blue)
                     if (gameController.isInputScrambled()) {
                         // Draw main indicator
                         g2.setColor(new Color(0, 0, 255, 255));
-                        g2.fillOval(indicatorX - 2, indicatorY - 4, indicatorSize, indicatorSize);
+                        g2.fillOval(indicatorX, indicatorY, indicatorSize, indicatorSize);
                     }
                 }
                 
@@ -218,6 +221,7 @@ public class App extends JFrame implements GameController.GameEventListener {
         };
         
         indicatorPanel.setOpaque(false);
+        indicatorPanel.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2)); // Match input field border
         indicatorPanel.add(inputField, BorderLayout.CENTER);
         
         JPanel centerPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
@@ -231,11 +235,45 @@ public class App extends JFrame implements GameController.GameEventListener {
     }
     
     private void styleInputField(JTextField inputField) {
-        Font inputFont = new Font("Consolas", Font.BOLD, 24);
+        Font inputFont = new Font("Consolas", Font.BOLD, 16);
         inputField.setFont(inputFont);
         inputField.setOpaque(false);
+        
+        // Create a custom border that changes color based on monster abilities
         inputField.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(100, 100, 255, 100), 2, true),
+            new Border() {
+                @Override
+                public void paintBorder(Component c, Graphics g, int x, int y, int width, int height) {
+                    Graphics2D g2 = (Graphics2D) g.create();
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    
+                    if (gameController != null) {
+                        if (gameController.isKeyboardJammed()) {
+                            g2.setColor(new Color(255, 0, 0, 200));
+                        } else if (gameController.isInputScrambled()) {
+                            g2.setColor(new Color(0, 0, 255, 200));
+                        } else {
+                            g2.setColor(new Color(100, 100, 255, 100));
+                        }
+                    } else {
+                        g2.setColor(new Color(100, 100, 255, 100));
+                    }
+                    
+                    g2.setStroke(new BasicStroke(2));
+                    g2.drawRoundRect(x, y, width - 1, height - 1, 10, 10);
+                    g2.dispose();
+                }
+                
+                @Override
+                public Insets getBorderInsets(Component c) {
+                    return new Insets(2, 2, 2, 2);
+                }
+                
+                @Override
+                public boolean isBorderOpaque() {
+                    return false;
+                }
+            },
             BorderFactory.createEmptyBorder(5, 10, 5, 10)
         ));
 
