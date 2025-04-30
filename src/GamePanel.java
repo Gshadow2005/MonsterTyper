@@ -8,10 +8,12 @@ public class GamePanel extends JPanel {
     private static final Image SHOOTER_IMAGE;
     private Monster targetMonster;
     private Timer animationTimer;
+    private Timer removalTimer;
     private int attackFrame = 0;
     private static final int MAX_ATTACK_FRAMES = 10;
     private static final int SHAKE_DURATION = 20;
     private int shakeFrame = 0;
+    private ArrayList<Monster> monstersToRemove = new ArrayList<>();
     
     static {
         ImageIcon icon = null;
@@ -35,6 +37,17 @@ public class GamePanel extends JPanel {
         // Setup animation timer
         animationTimer = new Timer(16, e -> updateAnimations());
         animationTimer.start();
+        
+        // Setup removal timer
+        removalTimer = new Timer(500, e -> { // 500ms delay
+            if (!monstersToRemove.isEmpty()) {
+                for (Monster monster : monstersToRemove) {
+                    gameController.removeMonster(monster);
+                }
+                monstersToRemove.clear();
+            }
+        });
+        removalTimer.setRepeats(false);
     }
     
     private void updateAnimations() {
@@ -70,15 +83,17 @@ public class GamePanel extends JPanel {
         boolean hasExtraLife = monster.hasExtraLife();
         boolean hasReverseInputPower = monster.hasReverseInputPower();
         boolean canSplit = monster.canSplit();
-        
+
         // Trigger hit animation
         monster.hit();
         
         // Start shake animation
         shakeFrame = SHAKE_DURATION;
-        
+
         // Decrease monster health
         monster.decreaseHealth();
+
+        // Check if monster should be removed
         if (monster.getHealth() <= 0) {
             if (canSplit) {
                 // Add child monsters
@@ -88,8 +103,6 @@ public class GamePanel extends JPanel {
                 }
             }
 
-            gameController.getMonsters().remove(monster);
-            
             // Apply monster powers
             if (hasJamPower) {
                 gameController.startKeyboardJam();
@@ -100,8 +113,16 @@ public class GamePanel extends JPanel {
             if (hasReverseInputPower) {
                 gameController.startInputScramble();
             }
-            
+
             gameController.increaseScore();
+            
+            // Mark monster for removal after delay
+            monstersToRemove.add(monster);
+            
+            // Start removal timer
+            removalTimer.restart();
+            
+            // Clear target monster and input
             targetMonster = null;
             gameController.getInputField().setText("");
         }
@@ -148,7 +169,7 @@ public class GamePanel extends JPanel {
             
             // Calculate rotation angle if there's a target
             double angle = 0;
-            if (targetMonster != null) {
+            if (targetMonster != null && !monstersToRemove.contains(targetMonster)) {
                 int targetX = targetMonster.getX(width) + targetMonster.getSize() / 2;
                 int targetY = targetMonster.getY(height) + targetMonster.getSize() / 2;
                 int shooterCenterX = shooterX + shooterSize / 2;
@@ -170,7 +191,7 @@ public class GamePanel extends JPanel {
             g2d.drawImage(SHOOTER_IMAGE, -shooterSize/2, -shooterSize/2, shooterSize, shooterSize, null);
             
             // Draw attack effect if attacking
-            if (attackFrame > 0) {
+            if (attackFrame > 0 && targetMonster != null && !monstersToRemove.contains(targetMonster)) {
                 float alpha = (float)attackFrame / MAX_ATTACK_FRAMES;
                 g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
                 g2d.setColor(Color.YELLOW);
@@ -191,18 +212,21 @@ public class GamePanel extends JPanel {
         // Draw monsters
         ArrayList<Monster> monsters = gameController.getMonsters();
         for (Monster monster : monsters) {
-            // Apply shake effect if this is the target monster and being hit
+            // Save the current transform
+            AffineTransform monsterTransform = g2d.getTransform();
+            
+            // Apply shake effect to the monster being hit
             if (monster == targetMonster && shakeFrame > 0) {
-                int shakeOffset = (int)(Math.sin(shakeFrame * 2) * 5);
+                // Calculate shake offset based on time
+                double shakeProgress = (double)shakeFrame / SHAKE_DURATION;
+                int shakeOffset = (int)(10 * Math.sin(shakeProgress * Math.PI * 4)); // Faster shake
                 g2d.translate(shakeOffset, 0);
             }
-            
+
             monster.draw(g, width, height);
             
-            // Reset transform if shake was applied
-            if (monster == targetMonster && shakeFrame > 0) {
-                g2d.setTransform(new AffineTransform());
-            }
+            // Restore the transform for the next monster
+            g2d.setTransform(monsterTransform);
         }
     }
     

@@ -175,6 +175,12 @@ public class GameController {
             monsters.removeAll(monstersToRemove);
         }
     }
+
+    public void removeMonster(Monster monster) {
+        if (monster != null && monsters.contains(monster)) {
+            monsters.remove(monster);
+        }
+    }
     
     private void checkInput() {
         if (!gameRunning || isKeyboardJammed || inputField == null || gamePanel == null) return;
