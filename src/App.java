@@ -194,30 +194,22 @@ public class App extends JFrame implements GameController.GameEventListener {
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 
                 if (gameController != null) {
-                    int indicatorSize = 20;
+                    int indicatorSize = 10;
                     int indicatorX = 10;
                     int indicatorY = 10;
                     
                     // Keyboard jam indicator (red)
                     if (gameController.isKeyboardJammed()) {
-                        // Draw glow effect
-                        g2.setColor(new Color(255, 0, 0, 100));
-                        g2.fillOval(indicatorX - 5, indicatorY - 5, indicatorSize + 10, indicatorSize + 10);
-                        
                         // Draw main indicator
                         g2.setColor(new Color(255, 0, 0, 255));
-                        g2.fillOval(indicatorX, indicatorY, indicatorSize, indicatorSize);
+                        g2.fillOval(indicatorX - 2, indicatorY - 4, indicatorSize, indicatorSize);
                     }
                     
                     // Input scramble indicator (blue)
                     if (gameController.isInputScrambled()) {
-                        // Draw glow effect
-                        g2.setColor(new Color(0, 0, 255, 100));
-                        g2.fillOval(indicatorX - 5, indicatorY - 5, indicatorSize + 10, indicatorSize + 10);
-                        
                         // Draw main indicator
                         g2.setColor(new Color(0, 0, 255, 255));
-                        g2.fillOval(indicatorX, indicatorY, indicatorSize, indicatorSize);
+                        g2.fillOval(indicatorX - 2, indicatorY - 4, indicatorSize, indicatorSize);
                     }
                 }
                 
