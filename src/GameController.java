@@ -328,6 +328,10 @@ public class GameController {
         if (inputField != null) {
             inputField.setBackground(new Color(200, 200, 255)); 
             inputField.setText("");
+            SwingUtilities.invokeLater(() -> {
+                inputField.repaint();
+                inputField.getParent().repaint();
+            });
         }
     }
     
@@ -353,6 +357,10 @@ public class GameController {
             inputField.setBackground(Color.WHITE);
             inputField.setText("");
             inputField.requestFocus();
+            SwingUtilities.invokeLater(() -> {
+                inputField.repaint();
+                inputField.getParent().repaint();
+            });
         }
     }
     
@@ -364,6 +372,10 @@ public class GameController {
         if (inputField != null) {
             inputField.setEnabled(false);
             inputField.setBackground(new Color(255, 200, 200)); // Light red background
+            SwingUtilities.invokeLater(() -> {
+                inputField.repaint();
+                inputField.getParent().repaint();
+            });
         }
     }
     
@@ -375,6 +387,10 @@ public class GameController {
             inputField.setBackground(Color.WHITE);
             inputField.setText("");
             inputField.requestFocus();
+            SwingUtilities.invokeLater(() -> {
+                inputField.repaint();
+                inputField.getParent().repaint();
+            });
         }
     }
     
