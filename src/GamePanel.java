@@ -52,7 +52,7 @@ public class GamePanel extends JPanel {
         
         // Try to load clouds image
         try {
-            ImageIcon cloudsIcon = new ImageIcon(GamePanel.class.getResource("/assets/CloudsniKoKoAndMarie.png"));
+            ImageIcon cloudsIcon = new ImageIcon(GamePanel.class.getResource("/assets/CloudsniKoKoAndMarie_4.png"));
             if (cloudsIcon.getIconWidth() > 0) {
                 cloudsImage = cloudsIcon.getImage();
             }
