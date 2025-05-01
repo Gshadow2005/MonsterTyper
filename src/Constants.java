@@ -16,7 +16,7 @@ public class Constants {
     // Monster properties
     public static final int MONSTER_SIZE = 50;
     public static final double MONSTER_INITIAL_SPEED = 0.5;
-    public static final double MONSTER_MAX_SPEED = 3.0;
+    public static final double MONSTER_MAX_SPEED = 10;
     
     // Monster power chances (percentage)
     public static final int SPLIT_CHANCE = 1;    
