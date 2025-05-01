@@ -6,8 +6,8 @@ import java.util.ArrayList;
 public class GamePanel extends JPanel {
     private GameController gameController;
     private static final Image SHOOTER_IMAGE;
-    private Image backgroundImage = null; // Background image instance
-    private Image cloudsImage = null; // Clouds image instance
+    private Image backgroundImage = null; 
+    private Image cloudsImage = null; 
     private Monster targetMonster;
     private Timer animationTimer;
     private Timer removalTimer;
@@ -197,41 +197,37 @@ public class GamePanel extends JPanel {
             g2d.fillRect(0, 0, width, height);
         }
 
-        // Draw semi-transparent black overlay on left side
-        g.setColor(new Color(0, 0, 0, 150));
-        g.fillRect(0, 0, 80, height);
-        
-        // Draw shooter
+        // Draw shooter with responsive size and x-offset
         if (SHOOTER_IMAGE != null) {
-            int shooterSize = 60;
-            int shooterX = 10;
-            int shooterY = (height - shooterSize) / 2;
-            
+            int shooterSize = Math.min(width, height) / 15; // Shooter size is 1/15th of the smaller dimension
+            int shooterX = (int) (width * 0.035); // Shooter x-offset is 5% of the panel width
+            int shooterY = (height - shooterSize) / 2; // Centered vertically
+
             double angle = 0;
             if (targetMonster != null && !monstersToRemove.contains(targetMonster)) {
                 int targetX = targetMonster.getX(width) + targetMonster.getSize() / 2;
                 int targetY = targetMonster.getY(height) + targetMonster.getSize() / 2;
                 int shooterCenterX = shooterX + shooterSize / 2;
                 int shooterCenterY = shooterY + shooterSize / 2;
-                
+
                 angle = Math.atan2(targetY - shooterCenterY, targetX - shooterCenterX);
             }
-            
+
             AffineTransform oldTransform = g2d.getTransform();
-            g2d.translate(shooterX + shooterSize/2, shooterY + shooterSize/2);
+            g2d.translate(shooterX + shooterSize / 2, shooterY + shooterSize / 2);
             g2d.rotate(angle);
-            g2d.drawImage(SHOOTER_IMAGE, -shooterSize/2, -shooterSize/2, shooterSize, shooterSize, null);
-            
+            g2d.drawImage(SHOOTER_IMAGE, -shooterSize / 2, -shooterSize / 2, shooterSize, shooterSize, null);
+
             if (attackFrame > 0 && targetMonster != null && !monstersToRemove.contains(targetMonster)) {
-                float alpha = (float)attackFrame / MAX_ATTACK_FRAMES;
+                float alpha = (float) attackFrame / MAX_ATTACK_FRAMES;
                 g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
                 g2d.setColor(Color.YELLOW);
                 g2d.setStroke(new BasicStroke(5));
                 g2d.drawLine(0, 0, shooterSize * 3, 0);
-                g2d.fillOval(-shooterSize/4, -shooterSize/4, shooterSize/2, shooterSize/2);
+                g2d.fillOval(-shooterSize / 4, -shooterSize / 4, shooterSize / 2, shooterSize / 2);
                 g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
             }
-            
+
             g2d.setTransform(oldTransform);
         }
 
@@ -239,10 +235,10 @@ public class GamePanel extends JPanel {
         ArrayList<Monster> monsters = gameController.getMonsters();
         for (Monster monster : monsters) {
             AffineTransform monsterTransform = g2d.getTransform();
-            
+
             if (monster == targetMonster && shakeFrame > 0) {
-                double shakeProgress = (double)shakeFrame / SHAKE_DURATION;
-                int shakeOffset = (int)(10 * Math.sin(shakeProgress * Math.PI * 4));
+                double shakeProgress = (double) shakeFrame / SHAKE_DURATION;
+                int shakeOffset = (int) (10 * Math.sin(shakeProgress * Math.PI * 4));
                 g2d.translate(shakeOffset, 0);
             }
 
@@ -252,10 +248,10 @@ public class GamePanel extends JPanel {
 
         // Draw clouds above the monsters
         if (cloudsImage != null) {
-            int cloudsWidth = width; // Adjust the width of the clouds
-            int cloudsHeight = height; // Stretch the clouds to match the panel height
-            int cloudsX = width - cloudsWidth; // Position at the right side
-            int cloudsY = 0; // Start at the top of the panel
+            int cloudsWidth = width;
+            int cloudsHeight = height;
+            int cloudsX = width - cloudsWidth;
+            int cloudsY = 0;
 
             g2d.drawImage(cloudsImage, cloudsX, cloudsY, cloudsWidth, cloudsHeight, this);
         }
