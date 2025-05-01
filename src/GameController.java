@@ -182,8 +182,11 @@ public class GameController {
         ArrayList<Monster> monstersToRemove = new ArrayList<>();
 
         for (Monster monster : monsters) {
-            monster.update(panelWidth);
-
+            // Only update monster position if not frozen
+            if (!powerUpManager.areMonstersFrozen()) {
+                monster.update(panelWidth);
+            }
+            
             // Check if monster reached the base
             if (monster.getX(panelWidth) <= thresholdX) {
                 monstersToRemove.add(monster);
