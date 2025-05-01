@@ -47,7 +47,7 @@ public class PowerUpManager {
         updateStreakDisplay();
 
         // Every 5 perfect hits triggers a random power-up
-        if (perfectStreak >= 5) {
+        if (perfectStreak >= 15) {
             activateRandomPowerUp();
             perfectStreak = 0;
             updateStreakDisplay();
@@ -56,7 +56,7 @@ public class PowerUpManager {
 
     private void updateStreakDisplay() {
         if (streakLabel != null) {
-            streakLabel.setText("Perfect Streak: " + perfectStreak + "/5");
+            streakLabel.setText("Perfect Streak: " + perfectStreak + "/15");
             
             // Visual feedback when getting close to power-up
             if (perfectStreak >= 3) {

@@ -486,20 +486,34 @@ public class GameController {
         if (gameTimer != null) {
             gameTimer.stop();
         }
-
-        int option = JOptionPane.showConfirmDialog(gamePanel, 
-            "Game Over!\nYour score: " + score + "\n\nPlay again?", 
-            "Monster Typer", 
-            JOptionPane.YES_NO_OPTION,
-            JOptionPane.INFORMATION_MESSAGE);
         
-        if (option == JOptionPane.YES_OPTION) {
-            resetGame();
-            startGame();
-        } else {
-            resetGame();
-            fireGameOverEvent();
-        }
+        // Create a dialog for the game over screen
+        JDialog gameOverDialog = new JDialog();
+        gameOverDialog.setTitle("Game Over");
+        gameOverDialog.setModal(true);
+        gameOverDialog.setSize(Constants.WIDTH, Constants.HEIGHT);
+        gameOverDialog.setLocationRelativeTo(gamePanel);
+        gameOverDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        
+        // Create the game over panel
+        GameOver gameOverPanel = new GameOver(
+            // Play Again button action
+            e -> {
+                gameOverDialog.dispose();
+                resetGame();
+                startGame();
+            },
+            // Main Menu button action
+            e -> {
+                gameOverDialog.dispose();
+                resetGame();
+                fireGameOverEvent();
+            },
+            score
+        );
+        
+        gameOverDialog.add(gameOverPanel);
+        gameOverDialog.setVisible(true);
     }
 
     public interface GameEventListener {
