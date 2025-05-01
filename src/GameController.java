@@ -181,7 +181,7 @@ public class GameController {
             monster.update(panelWidth);
             
             // Check if monster reached the base
-            if (monster.getX(panelWidth) <= 55) {
+            if (monster.getX(panelWidth) <= 100) {
                 monstersToRemove.add(monster);
                 decreaseLives();
             }

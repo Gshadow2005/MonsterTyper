@@ -216,7 +216,7 @@ public class GamePanel extends JPanel {
             AffineTransform oldTransform = g2d.getTransform();
             g2d.translate(shooterX + shooterSize/2, shooterY + shooterSize/2);
             g2d.rotate(angle);
-            g2d.drawImage(SHOOTER_IMAGE, -shooterSize/2, -shooterSize/2, shooterSize, shooterSize, null);
+            g2d.drawImage(SHOOTER_IMAGE, -shooterSize/20, -shooterSize/2, shooterSize, shooterSize, null);
             
             if (attackFrame > 0 && targetMonster != null && !monstersToRemove.contains(targetMonster)) {
                 float alpha = (float)attackFrame / MAX_ATTACK_FRAMES;
