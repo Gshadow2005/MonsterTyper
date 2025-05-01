@@ -197,10 +197,10 @@ public class GamePanel extends JPanel {
             g2d.fillRect(0, 0, width, height);
         }
 
-        // Draw shooter with responsive size
+        // Draw shooter with responsive size and x-offset
         if (SHOOTER_IMAGE != null) {
-            int shooterSize = Math.min(width, height) / 15; // Shooter size is 1/10th of the smaller dimension
-            int shooterX = 10; // Fixed x-offset
+            int shooterSize = Math.min(width, height) / 15; // Shooter size is 1/15th of the smaller dimension
+            int shooterX = (int) (width * 0.035); // Shooter x-offset is 5% of the panel width
             int shooterY = (height - shooterSize) / 2; // Centered vertically
 
             double angle = 0;

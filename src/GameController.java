@@ -173,20 +173,20 @@ public class GameController {
         if (!gameRunning || gamePanel == null) return;
 
         int panelWidth = gamePanel.getWidth();
-        //int panelHeight = gamePanel.getHeight();
+        int thresholdX = (int) (panelWidth * 0.06); // 10% of the panel width
 
         ArrayList<Monster> monstersToRemove = new ArrayList<>();
-        
+
         for (Monster monster : monsters) {
             monster.update(panelWidth);
-            
+
             // Check if monster reached the base
-            if (monster.getX(panelWidth) <= 100) {
+            if (monster.getX(panelWidth) <= thresholdX) {
                 monstersToRemove.add(monster);
                 decreaseLives();
             }
         }
-        
+
         // Remove monsters after iteration
         if (!monstersToRemove.isEmpty()) {
             monsters.removeAll(monstersToRemove);
