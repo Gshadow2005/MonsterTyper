@@ -37,7 +37,7 @@ public class GamePanel extends JPanel {
         
         // Try to load default background image
         try {
-            ImageIcon bgIcon = new ImageIcon(GamePanel.class.getResource("/assets/LiveBG_1.gif"));
+            ImageIcon bgIcon = new ImageIcon(GamePanel.class.getResource("/assets/BGniKoKoAndMarie.png"));
             if (bgIcon.getIconWidth() > 0) {
                 backgroundImage = bgIcon.getImage();
             }
@@ -177,21 +177,9 @@ public class GamePanel extends JPanel {
         int width = getWidth();
         int height = getHeight();
 
-        // Draw rotated background image
+        // Draw the background image stretched to fit the panel
         if (backgroundImage != null) {
-            AffineTransform originalTransform = g2d.getTransform();
-
-            // Move the origin to the center of the panel
-            g2d.translate(width / 2, height / 2);
-
-            // Rotate the image 90 degrees counterclockwise
-            g2d.rotate(Math.PI / 2);
-
-            // Draw the image centered at the new origin
-            g2d.drawImage(backgroundImage, -height / 2, -width / 2, height, width, this);
-
-            // Restore the original transform
-            g2d.setTransform(originalTransform);
+            g2d.drawImage(backgroundImage, 0, 0, width, height, this);
         } else {
             // Fallback to black background
             g2d.setColor(Color.BLACK);
