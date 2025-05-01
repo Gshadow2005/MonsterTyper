@@ -42,7 +42,7 @@ public class GamePanel extends JPanel {
         
         // Try to load default background image
         try {
-            ImageIcon bgIcon = new ImageIcon(GamePanel.class.getResource("/assets/BGniKoKoAndMarie.png"));
+            ImageIcon bgIcon = new ImageIcon(GamePanel.class.getResource("/assets/BGniKoKoAndMarie_2.png"));
             if (bgIcon.getIconWidth() > 0) {
                 backgroundImage = bgIcon.getImage();
             }
