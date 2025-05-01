@@ -6,8 +6,8 @@ import java.util.ArrayList;
 public class GamePanel extends JPanel {
     private GameController gameController;
     private static final Image SHOOTER_IMAGE;
-    private Image backgroundImage = null; // Background image instance
-    private Image cloudsImage = null; // Clouds image instance
+    private Image backgroundImage = null; 
+    private Image cloudsImage = null; 
     private Monster targetMonster;
     private Timer animationTimer;
     private Timer removalTimer;
@@ -196,10 +196,6 @@ public class GamePanel extends JPanel {
             g2d.setColor(Color.BLACK);
             g2d.fillRect(0, 0, width, height);
         }
-
-        // Draw semi-transparent black overlay on left side
-        g.setColor(new Color(0, 0, 0, 150));
-        g.fillRect(0, 0, 80, height);
         
         // Draw shooter
         if (SHOOTER_IMAGE != null) {
@@ -252,10 +248,10 @@ public class GamePanel extends JPanel {
 
         // Draw clouds above the monsters
         if (cloudsImage != null) {
-            int cloudsWidth = width; // Adjust the width of the clouds
-            int cloudsHeight = height; // Stretch the clouds to match the panel height
-            int cloudsX = width - cloudsWidth; // Position at the right side
-            int cloudsY = 0; // Start at the top of the panel
+            int cloudsWidth = width; 
+            int cloudsHeight = height; 
+            int cloudsX = width - cloudsWidth; 
+            int cloudsY = 0; 
 
             g2d.drawImage(cloudsImage, cloudsX, cloudsY, cloudsWidth, cloudsHeight, this);
         }
