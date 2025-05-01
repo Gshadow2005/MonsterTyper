@@ -142,13 +142,29 @@ public class GameController {
     
     private void spawnMonster() {
         if (!gameRunning) return;
-        
-        // Get words for current difficulty level
+
+        // Get words for the current difficulty level
         String[] currentWords = Constants.DIFFICULTY_WORDS.get(Constants.currentDifficulty);
         String word = currentWords[Constants.RANDOM.nextInt(currentWords.length)];
-        int x = Constants.WIDTH - Constants.MONSTER_SIZE;
-        int y = Constants.RANDOM.nextInt(Constants.HEIGHT - 100 - Constants.MONSTER_SIZE);
-        
+
+        // Calculate spawn position
+        int panelWidth = Constants.WIDTH;
+        int panelHeight = Constants.HEIGHT;
+
+        int x = panelWidth - Constants.MONSTER_SIZE; // Always spawn at the right edge
+
+        // Define a vertical spawn range with a slight bias toward the top
+        int centerY = panelHeight / 2;
+        int spawnRangeY = panelHeight / 4; // Spawn area height (e.g., 1/3 of the panel height)
+        int biasOffset = -panelHeight / 12; // Slight bias toward the top
+
+        // Randomize the y position within the vertical range
+        int y = centerY - spawnRangeY / 2 + biasOffset + Constants.RANDOM.nextInt(spawnRangeY);
+
+        // Ensure the monster fits within the panel bounds
+        y = Math.max(0, Math.min(y, panelHeight - Constants.MONSTER_SIZE));
+
+        // Create and add the monster
         Monster monster = new Monster(x, y, word);
         monsters.add(monster);
     }

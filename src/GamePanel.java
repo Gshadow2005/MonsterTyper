@@ -37,7 +37,7 @@ public class GamePanel extends JPanel {
         
         // Try to load default background image
         try {
-            ImageIcon bgIcon = new ImageIcon(GamePanel.class.getResource("/assets/BlackHomies.png"));
+            ImageIcon bgIcon = new ImageIcon(GamePanel.class.getResource("/assets/BGniKoKoAndMarie.png"));
             if (bgIcon.getIconWidth() > 0) {
                 backgroundImage = bgIcon.getImage();
             }
@@ -173,18 +173,17 @@ public class GamePanel extends JPanel {
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2d = (Graphics2D) g;
-        
+
         int width = getWidth();
         int height = getHeight();
 
-        // Draw background
+        // Draw the background image stretched to fit the panel
         if (backgroundImage != null) {
-            // Draw background image scaled to fit the panel
-            g.drawImage(backgroundImage, 0, 0, width, height, this);
+            g2d.drawImage(backgroundImage, 0, 0, width, height, this);
         } else {
             // Fallback to black background
-            g.setColor(Color.BLACK);
-            g.fillRect(0, 0, width, height);
+            g2d.setColor(Color.BLACK);
+            g2d.fillRect(0, 0, width, height);
         }
 
         // Draw semi-transparent black overlay on left side
