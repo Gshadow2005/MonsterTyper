@@ -52,7 +52,7 @@ public class PowerUpManager {
         updateStreakDisplay();
 
         // Every 5 perfect hits triggers a random power-up
-        if (perfectStreak >= 5) {
+        if (perfectStreak >= 15) {
             activateRandomPowerUp();
             perfectStreak = 0;
             updateStreakDisplay();
