@@ -487,23 +487,20 @@ public class GameController {
             gameTimer.stop();
         }
         
-        // Create a dialog for the game over screen
         JDialog gameOverDialog = new JDialog();
         gameOverDialog.setTitle("Game Over");
         gameOverDialog.setModal(true);
         gameOverDialog.setSize(Constants.WIDTH, Constants.HEIGHT);
         gameOverDialog.setLocationRelativeTo(gamePanel);
-        gameOverDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-        
-        // Create the game over panel
+        gameOverDialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+
         GameOver gameOverPanel = new GameOver(
-            // Play Again button action
             e -> {
                 gameOverDialog.dispose();
                 resetGame();
                 startGame();
             },
-            // Main Menu button action
+
             e -> {
                 gameOverDialog.dispose();
                 resetGame();
