@@ -7,6 +7,7 @@ public class PowerUpManager {
     private int perfectStreak = 0;
     private boolean monstersFrozen = false;
     private Timer freezeTimer;
+    private Timer resetStreakTimer; 
     private JLabel streakLabel;
     private JLabel powerUpNotification;
 
@@ -43,6 +44,10 @@ public class PowerUpManager {
     }
 
     public void registerPerfectHit() {
+        if (resetStreakTimer != null && resetStreakTimer.isRunning()) {
+            resetStreakTimer.stop();
+        }
+        
         perfectStreak++;
         updateStreakDisplay();
 
@@ -56,7 +61,7 @@ public class PowerUpManager {
 
     private void updateStreakDisplay() {
         if (streakLabel != null) {
-            streakLabel.setText("Perfect Streak: " + perfectStreak + "/5");
+            streakLabel.setText("Perfect Streak: " + perfectStreak + "/15");
             
             // Visual feedback when getting close to power-up
             if (perfectStreak >= 3) {
@@ -68,8 +73,21 @@ public class PowerUpManager {
     }
 
     public void resetStreak() {
-        perfectStreak = 0;
-        updateStreakDisplay();
+        if (resetStreakTimer != null && resetStreakTimer.isRunning()) {
+            return;
+        }
+
+        if (streakLabel != null) {
+            streakLabel.setForeground(Color.RED);
+        }
+        
+        resetStreakTimer = new Timer(1000, e -> {
+            perfectStreak = 0;
+            updateStreakDisplay();
+            resetStreakTimer.stop();
+        });
+        resetStreakTimer.setRepeats(false);
+        resetStreakTimer.start();
     }
 
     public boolean areMonstersFrozen() {
@@ -88,7 +106,7 @@ public class PowerUpManager {
 
     private void activateFreezePowerUp() {
         monstersFrozen = true;
-        showPowerUpNotification("FREEZE POWER-UP ACTIVATED!", Color.CYAN);
+        showPowerUpNotification("Freeze Activated!", Color.CYAN);
 
         if (freezeTimer != null && freezeTimer.isRunning()) {
             freezeTimer.stop();
@@ -97,7 +115,7 @@ public class PowerUpManager {
         freezeTimer = new Timer(3000, e -> {
             monstersFrozen = false;
             freezeTimer.stop();
-            showPowerUpNotification("", Color.WHITE); // Clear notification
+            showPowerUpNotification("", Color.WHITE); 
         });
 
         freezeTimer.start();
@@ -118,7 +136,7 @@ public class PowerUpManager {
             Monster toRemove = gameController.getMonsters().get(0);
             gameController.removeMonster(toRemove);
             gameController.increaseScore();
-            showPowerUpNotification("WORD SKIPPED!", Color.GREEN);
+            showPowerUpNotification("Word Skipped!", Color.GREEN);
             
             // Flash effect for skip power-up
             if (gameController.getGamePanel() != null) {
