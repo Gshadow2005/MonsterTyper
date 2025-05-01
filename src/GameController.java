@@ -16,6 +16,7 @@ public class GameController {
     private JLabel livesLabel;
     private JPanel gamePanel;
     private Timer jamTimer;
+    private PowerUpManager powerUpManager;
     
     // Game state
     private int score;
@@ -39,6 +40,9 @@ public class GameController {
         
         // Initialize scrambled key map
         scrambledKeyMap = new HashMap<>();
+        
+        // Initialize PowerUpManager
+        powerUpManager = new PowerUpManager(this);
         
         // Initialize UI components
         initializeComponents();
@@ -162,12 +166,17 @@ public class GameController {
         ArrayList<Monster> monstersToRemove = new ArrayList<>();
         
         for (Monster monster : monsters) {
-            monster.update(panelWidth);
+            // Only update monster position if not frozen
+            if (!powerUpManager.areMonstersFrozen()) {
+                monster.update(panelWidth);
+            }
             
             // Check if monster reached the base
             if (monster.getX(panelWidth) <= 0) {
                 monstersToRemove.add(monster);
                 decreaseLives();
+                // Reset perfect streak when a monster reaches the base
+                powerUpManager.resetStreak();
             }
         }
         
@@ -180,6 +189,8 @@ public class GameController {
     public void removeMonster(Monster monster) {
         if (monster != null && monsters.contains(monster)) {
             monsters.remove(monster);
+            // Register a perfect hit when removing monster
+            powerUpManager.registerPerfectHit();
         }
     }
     
@@ -198,6 +209,9 @@ public class GameController {
         }
 
         if (monsterToHit != null) {
+            // Perfect hit registered - increment streak
+            powerUpManager.registerPerfectHit();
+            
             // Trigger animation through the GamePanel
             if (gamePanel instanceof GamePanel) {
                 ((GamePanel) gamePanel).attackMonster(monsterToHit);
@@ -243,6 +257,9 @@ public class GameController {
             inputField.setText("");
             
         } else {
+            // Incorrect input - reset the perfect streak
+            powerUpManager.resetStreak();
+            
             if (clearInputTimer.isRunning()) {
                 clearInputTimer.restart(); 
             } else {
@@ -518,6 +535,13 @@ public class GameController {
         
         // Reset monster speed
         Constants.currentMonsterSpeed = Constants.MONSTER_INITIAL_SPEED;
+        
+        // Reset power-up streak
+        powerUpManager.resetStreak();
+
+        if (gamePanel != null) {
+            powerUpManager.setGamePanel(gamePanel);
+        }
     }
 
     public void stopGame() {
@@ -541,6 +565,11 @@ public class GameController {
         }
     }
     
+    // Getter for PowerUpManager
+    public PowerUpManager getPowerUpManager() {
+        return powerUpManager;
+    }
+    
     // Getters for components
     public ArrayList<Monster> getMonsters() {
         return new ArrayList<>(monsters);
@@ -560,6 +589,10 @@ public class GameController {
     
     public void setGamePanel(JPanel gamePanel) { 
         this.gamePanel = gamePanel;
+
+        if (powerUpManager != null) {
+            powerUpManager.setGamePanel(gamePanel);
+        }
     }
     
     public boolean isKeyboardJammed() {
@@ -572,5 +605,9 @@ public class GameController {
     
     public boolean isGameRunning() {
         return gameRunning;
+    }
+    
+    public JPanel getGamePanel() {
+        return gamePanel;
     }
 }

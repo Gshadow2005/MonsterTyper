@@ -53,6 +53,10 @@ public class Constants {
     private static final String MEDIUM_WORDS_FILE = WORDS_FOLDER + "medium_words.txt";
     private static final String HARD_WORDS_FILE = WORDS_FOLDER + "hard_words.txt";
 
+    // Add these with your other constants:
+    public static final int FREEZE_DURATION = 3000; // 3 seconds
+    public static final int PERFECT_HITS_FOR_POWERUP = 5; // Number of perfect hits needed
+
     public static final Map<Integer, String[]> DIFFICULTY_WORDS = loadAllWordFiles();
     
     // Random generator for the game
