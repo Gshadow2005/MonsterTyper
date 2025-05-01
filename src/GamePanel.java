@@ -2,6 +2,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class GamePanel extends JPanel {
     private GameController gameController;
@@ -16,6 +17,10 @@ public class GamePanel extends JPanel {
     private static final int SHAKE_DURATION = 20;
     private int shakeFrame = 0;
     private ArrayList<Monster> monstersToRemove = new ArrayList<>();
+    
+    // Explosion animation fields
+    private ImageIcon explosionGif;
+    private HashMap<Monster, ExplosionAnimation> explosions = new HashMap<>();
     
     static {
         ImageIcon icon = null;
@@ -56,6 +61,18 @@ public class GamePanel extends JPanel {
             System.out.println("No clouds image found or error loading it: " + e.getMessage());
         }
         
+        // Try to load explosion GIF
+        try {
+            explosionGif = new ImageIcon(GamePanel.class.getResource("/assets/explosion.gif"));
+            if (explosionGif.getIconWidth() <= 0) {
+                System.out.println("Warning: Explosion GIF loaded but has invalid dimensions");
+                explosionGif = null;
+            }
+        } catch (Exception e) {
+            System.out.println("Failed to load explosion GIF: " + e.getMessage());
+            explosionGif = null;
+        }
+        
         // Setup animation timer
         animationTimer = new Timer(16, e -> updateAnimations());
         animationTimer.start();
@@ -92,6 +109,25 @@ public class GamePanel extends JPanel {
     }
     
     /**
+     * Sets a new explosion GIF from the assets folder
+     * @param filename The name of the GIF file in the assets folder (e.g., "explosion.gif")
+     */
+    public void setExplosionGif(String filename) {
+        try {
+            ImageIcon icon = new ImageIcon(GamePanel.class.getResource("/assets/" + filename));
+            if (icon.getIconWidth() > 0) {
+                explosionGif = icon;
+                System.out.println("Successfully loaded explosion GIF: " + filename);
+            } else {
+                System.out.println("Warning: Explosion GIF loaded but has invalid dimensions");
+            }
+        } catch (Exception e) {
+            System.out.println("Failed to load explosion GIF: " + e.getMessage());
+            explosionGif = null;
+        }
+    }
+    
+    /**
      * Removes the background image (sets background to black)
      */
     public void clearBackgroundImage() {
@@ -119,6 +155,20 @@ public class GamePanel extends JPanel {
                 targetMonster = newTarget;
                 shootAtMonster(targetMonster);
             }
+        }
+        
+        // Update explosion animations and remove completed ones
+        ArrayList<Monster> finishedExplosions = new ArrayList<>();
+        for (Monster monster : explosions.keySet()) {
+            ExplosionAnimation explosion = explosions.get(monster);
+            explosion.update();
+            if (explosion.isFinished()) {
+                finishedExplosions.add(monster);
+            }
+        }
+        
+        for (Monster monster : finishedExplosions) {
+            explosions.remove(monster);
         }
         
         repaint();
@@ -153,10 +203,35 @@ public class GamePanel extends JPanel {
             }
 
             gameController.increaseScore();
+            
+            // Add explosion animation at monster's position
+            addExplosionAnimation(monster);
+            
             monstersToRemove.add(monster);
             removalTimer.restart();
             targetMonster = null;
             gameController.getInputField().setText("");
+        }
+    }
+    
+    /**
+     * Adds an explosion animation at the position of a defeated monster
+     * @param monster The monster that was defeated
+     */
+    private void addExplosionAnimation(Monster monster) {
+        if (explosionGif != null) {
+            int width = getWidth();
+            int height = getHeight();
+            
+            // Get the monster's position and size
+            int monsterX = monster.getX(width);
+            int monsterY = monster.getY(height);
+            int monsterSize = monster.getSize();
+            
+            // Store a direct reference to the monster for better positioning
+            ExplosionAnimation explosion = new ExplosionAnimation(monsterX, monsterY, monsterSize, monsterSize);
+            explosion.monster = monster; // Set monster reference directly
+            explosions.put(monster, explosion);
         }
     }
     
@@ -245,6 +320,14 @@ public class GamePanel extends JPanel {
             monster.draw(g, width, height);
             g2d.setTransform(monsterTransform);
         }
+        
+        // Draw explosion animations
+        if (explosionGif != null) {
+            for (Monster monster : explosions.keySet()) {
+                ExplosionAnimation explosion = explosions.get(monster);
+                explosion.draw(g2d);
+            }
+        }
 
         // Draw clouds above the monsters
         if (cloudsImage != null) {
@@ -261,6 +344,58 @@ public class GamePanel extends JPanel {
         if (monster != null) {
             targetMonster = monster;
             shootAtMonster(monster);
+        }
+    }
+    
+    /**
+     * Inner class to handle the explosion animation
+     */
+    private class ExplosionAnimation {
+        private int x, y;
+        private Monster monster; // Store reference to the monster
+        private int duration = 1000; // Duration in milliseconds (adjust as needed)
+        private long startTime;
+        
+        public ExplosionAnimation(int x, int y, int width, int height) {
+            this.x = x;
+            this.y = y;
+            for (Monster m : monstersToRemove) {
+                if (m.getX(getWidth()) == x && m.getY(getHeight()) == y) {
+                    this.monster = m;
+                    break;
+                }
+            }
+            this.startTime = System.currentTimeMillis();
+        }
+        
+        public void update() {
+            // Nothing to update for GIF, it animates automatically
+        }
+        
+        public boolean isFinished() {
+            return System.currentTimeMillis() - startTime > duration;
+        }
+        
+        public void draw(Graphics2D g) {
+            if (explosionGif != null) {
+                // Get the GIF dimensions
+                int gifWidth = explosionGif.getIconWidth();
+                int gifHeight = explosionGif.getIconHeight();
+                
+                // Calculate position to center the explosion over the monster
+                int drawX = x;
+                int drawY = y;
+                
+                if (monster != null) {
+                    // If we have the monster reference, center explosion over it
+                    int monsterSize = monster.getSize();
+                    drawX = x - (gifWidth - monsterSize) / 2;
+                    drawY = y - (gifHeight - monsterSize) / 2;
+                }
+                
+                // Draw the explosion GIF
+                explosionGif.paintIcon(GamePanel.this, g, drawX, drawY);
+            }
         }
     }
 }
