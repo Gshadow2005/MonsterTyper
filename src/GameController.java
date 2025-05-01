@@ -205,8 +205,6 @@ public class GameController {
     public void removeMonster(Monster monster) {
         if (monster != null && monsters.contains(monster)) {
             monsters.remove(monster);
-            // Register a perfect hit when removing monster
-            powerUpManager.registerPerfectHit();
         }
     }
     

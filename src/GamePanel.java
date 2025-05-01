@@ -3,6 +3,7 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 
 public class GamePanel extends JPanel {
     private GameController gameController;
@@ -11,12 +12,10 @@ public class GamePanel extends JPanel {
     private Image cloudsImage = null; 
     private Monster targetMonster;
     private Timer animationTimer;
-    private Timer removalTimer;
     private int attackFrame = 0;
     private static final int MAX_ATTACK_FRAMES = 10;
     private static final int SHAKE_DURATION = 20;
     private int shakeFrame = 0;
-    private ArrayList<Monster> monstersToRemove = new ArrayList<>();
     
     // Explosion animation fields
     private ImageIcon explosionGif;
@@ -53,7 +52,7 @@ public class GamePanel extends JPanel {
         
         // Try to load clouds image
         try {
-            ImageIcon cloudsIcon = new ImageIcon(GamePanel.class.getResource("/assets/CloudsniKoKoAndMarie.png"));
+            ImageIcon cloudsIcon = new ImageIcon(GamePanel.class.getResource("/assets/CloudsniKoKoAndMarie_4.png"));
             if (cloudsIcon.getIconWidth() > 0) {
                 cloudsImage = cloudsIcon.getImage();
             }
@@ -76,17 +75,6 @@ public class GamePanel extends JPanel {
         // Setup animation timer
         animationTimer = new Timer(16, e -> updateAnimations());
         animationTimer.start();
-        
-        // Setup removal timer
-        removalTimer = new Timer(500, e -> {
-            if (!monstersToRemove.isEmpty()) {
-                for (Monster monster : monstersToRemove) {
-                    gameController.removeMonster(monster);
-                }
-                monstersToRemove.clear();
-            }
-        });
-        removalTimer.setRepeats(false);
     }
     
     /**
@@ -158,17 +146,18 @@ public class GamePanel extends JPanel {
         }
         
         // Update explosion animations and remove completed ones
-        ArrayList<Monster> finishedExplosions = new ArrayList<>();
-        for (Monster monster : explosions.keySet()) {
-            ExplosionAnimation explosion = explosions.get(monster);
+        Iterator<HashMap.Entry<Monster, ExplosionAnimation>> it = explosions.entrySet().iterator();
+        while (it.hasNext()) {
+            HashMap.Entry<Monster, ExplosionAnimation> entry = it.next();
+            ExplosionAnimation explosion = entry.getValue();
             explosion.update();
+            
             if (explosion.isFinished()) {
-                finishedExplosions.add(monster);
+                Monster monster = entry.getKey();
+                // Remove monster from game when explosion finishes
+                gameController.removeMonster(monster);
+                it.remove();
             }
-        }
-        
-        for (Monster monster : finishedExplosions) {
-            explosions.remove(monster);
         }
         
         repaint();
@@ -207,10 +196,11 @@ public class GamePanel extends JPanel {
             // Add explosion animation at monster's position
             addExplosionAnimation(monster);
             
-            monstersToRemove.add(monster);
-            removalTimer.restart();
-            targetMonster = null;
+            // Clear the input field
             gameController.getInputField().setText("");
+            
+            // Reset target
+            targetMonster = null;
         }
     }
     
@@ -220,17 +210,8 @@ public class GamePanel extends JPanel {
      */
     private void addExplosionAnimation(Monster monster) {
         if (explosionGif != null) {
-            int width = getWidth();
-            int height = getHeight();
-            
-            // Get the monster's position and size
-            int monsterX = monster.getX(width);
-            int monsterY = monster.getY(height);
-            int monsterSize = monster.getSize();
-            
-            // Store a direct reference to the monster for better positioning
-            ExplosionAnimation explosion = new ExplosionAnimation(monsterX, monsterY, monsterSize, monsterSize);
-            explosion.monster = monster; // Set monster reference directly
+            // Create explosion animation with monster reference
+            ExplosionAnimation explosion = new ExplosionAnimation(monster);
             explosions.put(monster, explosion);
         }
     }
@@ -279,7 +260,7 @@ public class GamePanel extends JPanel {
             int shooterY = (height - shooterSize) / 2; // Centered vertically
 
             double angle = 0;
-            if (targetMonster != null && !monstersToRemove.contains(targetMonster)) {
+            if (targetMonster != null) {
                 int targetX = targetMonster.getX(width) + targetMonster.getSize() / 2;
                 int targetY = targetMonster.getY(height) + targetMonster.getSize() / 2;
                 int shooterCenterX = shooterX + shooterSize / 2;
@@ -293,7 +274,7 @@ public class GamePanel extends JPanel {
             g2d.rotate(angle);
             g2d.drawImage(SHOOTER_IMAGE, -shooterSize / 2, -shooterSize / 2, shooterSize, shooterSize, null);
 
-            if (attackFrame > 0 && targetMonster != null && !monstersToRemove.contains(targetMonster)) {
+            if (attackFrame > 0 && targetMonster != null) {
                 float alpha = (float) attackFrame / MAX_ATTACK_FRAMES;
                 g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
                 g2d.setColor(Color.YELLOW);
@@ -306,26 +287,31 @@ public class GamePanel extends JPanel {
             g2d.setTransform(oldTransform);
         }
 
-        // Draw monsters
+        // Draw monsters - we draw normal monsters first, then monsters with explosions on top
         ArrayList<Monster> monsters = gameController.getMonsters();
+        
+        // First draw monsters that don't have explosions
         for (Monster monster : monsters) {
-            AffineTransform monsterTransform = g2d.getTransform();
-
-            if (monster == targetMonster && shakeFrame > 0) {
-                double shakeProgress = (double) shakeFrame / SHAKE_DURATION;
-                int shakeOffset = (int) (10 * Math.sin(shakeProgress * Math.PI * 4));
-                g2d.translate(shakeOffset, 0);
+            if (!explosions.containsKey(monster)) {
+                AffineTransform monsterTransform = g2d.getTransform();
+                
+                if (monster == targetMonster && shakeFrame > 0) {
+                    double shakeProgress = (double) shakeFrame / SHAKE_DURATION;
+                    int shakeOffset = (int) (10 * Math.sin(shakeProgress * Math.PI * 4));
+                    g2d.translate(shakeOffset, 0);
+                }
+                
+                monster.draw(g, width, height);
+                g2d.setTransform(monsterTransform);
             }
-
-            monster.draw(g, width, height);
-            g2d.setTransform(monsterTransform);
         }
         
-        // Draw explosion animations
-        if (explosionGif != null) {
-            for (Monster monster : explosions.keySet()) {
-                ExplosionAnimation explosion = explosions.get(monster);
-                explosion.draw(g2d);
+        // Now draw monsters with explosions and their explosions
+        for (Monster monster : explosions.keySet()) {
+            if (monsters.contains(monster)) {  // Only draw if monster is still in the game list
+                // Don't draw the monster itself - it's being replaced by the explosion
+                // Draw the explosion at the monster's current position
+                explosions.get(monster).draw(g2d, width, height);
             }
         }
 
@@ -351,20 +337,12 @@ public class GamePanel extends JPanel {
      * Inner class to handle the explosion animation
      */
     private class ExplosionAnimation {
-        private int x, y;
         private Monster monster; // Store reference to the monster
-        private int duration = 1000; // Duration in milliseconds (adjust as needed)
         private long startTime;
+        private int duration = 800; // Duration in milliseconds (1 second as specified)
         
-        public ExplosionAnimation(int x, int y, int width, int height) {
-            this.x = x;
-            this.y = y;
-            for (Monster m : monstersToRemove) {
-                if (m.getX(getWidth()) == x && m.getY(getHeight()) == y) {
-                    this.monster = m;
-                    break;
-                }
-            }
+        public ExplosionAnimation(Monster monster) {
+            this.monster = monster;
             this.startTime = System.currentTimeMillis();
         }
         
@@ -376,22 +354,20 @@ public class GamePanel extends JPanel {
             return System.currentTimeMillis() - startTime > duration;
         }
         
-        public void draw(Graphics2D g) {
-            if (explosionGif != null) {
+        public void draw(Graphics2D g, int panelWidth, int panelHeight) {
+            if (explosionGif != null && monster != null) {
+                // Get the monster's current position and size
+                int monsterX = monster.getX(panelWidth);
+                int monsterY = monster.getY(panelHeight);
+                int monsterSize = monster.getSize();
+                
                 // Get the GIF dimensions
                 int gifWidth = explosionGif.getIconWidth();
                 int gifHeight = explosionGif.getIconHeight();
                 
                 // Calculate position to center the explosion over the monster
-                int drawX = x;
-                int drawY = y;
-                
-                if (monster != null) {
-                    // If we have the monster reference, center explosion over it
-                    int monsterSize = monster.getSize();
-                    drawX = x - (gifWidth - monsterSize) / 2;
-                    drawY = y - (gifHeight - monsterSize) / 2;
-                }
+                int drawX = monsterX - (gifWidth - monsterSize) / 2;
+                int drawY = monsterY - (gifHeight - monsterSize) / 2;
                 
                 // Draw the explosion GIF
                 explosionGif.paintIcon(GamePanel.this, g, drawX, drawY);
