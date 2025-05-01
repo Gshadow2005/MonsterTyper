@@ -43,13 +43,12 @@ public class GameOver extends JPanel {
         scoreLabel.setForeground(Color.WHITE);
         scoreLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         
-        // Button panel
+        // Button panel - changed to horizontal layout
         JPanel buttonPanel = new JPanel();
-        buttonPanel.setLayout(new GridLayout(2, 1, 0, 10));
+        buttonPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 20, 0));
         buttonPanel.setBackground(BACKGROUND_COLOR);
         buttonPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 0));
         buttonPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        buttonPanel.setMaximumSize(new Dimension(180, 100));
         
         // Create buttons with the same styling as MainMenu
         playAgainButton = createMenuButton("Play Again");
@@ -241,14 +240,14 @@ public class GameOver extends JPanel {
     }
     
     private ImageIcon loadLogoGif() {
-        URL gifUrl = getClass().getResource("/assets/logo.gif");
+        URL gifUrl = getClass().getResource("/assets/gameover.gif");
         
         if (gifUrl != null) {
             return new ImageIcon(gifUrl);
         }
         
         try {
-            java.io.File file = new java.io.File("assets/logo.gif");
+            java.io.File file = new java.io.File("assets/gameover.gif");
             if (file.exists()) {
                 return new ImageIcon(file.getAbsolutePath());
             }
@@ -256,7 +255,7 @@ public class GameOver extends JPanel {
             System.out.println("Error loading logo: " + e.getMessage());
         }
 
-        System.out.println("logo.gif not found in assets folder");
+        System.out.println("gameover.gif not found in assets folder");
 
         return createPlaceholderLogo();
     }

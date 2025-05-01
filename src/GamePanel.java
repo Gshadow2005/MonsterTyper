@@ -10,6 +10,7 @@ public class GamePanel extends JPanel {
     private static final Image SHOOTER_IMAGE;
     private Image backgroundImage = null; 
     private Image cloudsImage = null; 
+    private Image fortImage = null; // Image for FortniKoKoAndMarie
     private Monster targetMonster;
     private Timer animationTimer;
     private int attackFrame = 0;
@@ -42,7 +43,7 @@ public class GamePanel extends JPanel {
         
         // Try to load default background image
         try {
-            ImageIcon bgIcon = new ImageIcon(GamePanel.class.getResource("/assets/BGniKoKoAndMarie.png"));
+            ImageIcon bgIcon = new ImageIcon(GamePanel.class.getResource("/assets/BGniKoKoAndMarie_2.png"));
             if (bgIcon.getIconWidth() > 0) {
                 backgroundImage = bgIcon.getImage();
             }
@@ -58,6 +59,18 @@ public class GamePanel extends JPanel {
             }
         } catch (Exception e) {
             System.out.println("No clouds image found or error loading it: " + e.getMessage());
+        }
+        
+        // Try to load FortniKoKoAndMarie image
+        try {
+            ImageIcon fortIcon = new ImageIcon(GamePanel.class.getResource("/assets/FortniKoKoAndMarie.png"));
+            if (fortIcon.getIconWidth() > 0) {
+                fortImage = fortIcon.getImage();
+            } else {
+                System.out.println("Warning: FortniKoKoAndMarie image loaded but has invalid dimensions");
+            }
+        } catch (Exception e) {
+            System.out.println("Failed to load FortniKoKoAndMarie image: " + e.getMessage());
         }
         
         // Try to load explosion GIF
@@ -253,11 +266,21 @@ public class GamePanel extends JPanel {
             g2d.fillRect(0, 0, width, height);
         }
 
+        // Draw FortniKoKoAndMarie image at the left side, centered vertically
+        if (fortImage != null) {
+            int fortWidth = (int) (width * 0.5); 
+            int fortHeight = (int) (width * 0.5); 
+            int fortX = 0; 
+            int fortY = (height - fortHeight) / 2; 
+
+            g2d.drawImage(fortImage, fortX, fortY, fortWidth, fortHeight, this);
+        }
+
         // Draw shooter with responsive size and x-offset
         if (SHOOTER_IMAGE != null) {
-            int shooterSize = Math.min(width, height) / 15; // Shooter size is 1/15th of the smaller dimension
-            int shooterX = (int) (width * 0.035); // Shooter x-offset is 5% of the panel width
-            int shooterY = (height - shooterSize) / 2; // Centered vertically
+            int shooterSize = Math.min(width, height) / 15; 
+            int shooterX = (int) (width * 0.040); 
+            int shooterY = (height - shooterSize) / 2; 
 
             double angle = 0;
             if (targetMonster != null) {
@@ -289,23 +312,23 @@ public class GamePanel extends JPanel {
 
         // Draw monsters - we draw normal monsters first, then monsters with explosions on top
         ArrayList<Monster> monsters = gameController.getMonsters();
-        
+
         // First draw monsters that don't have explosions
         for (Monster monster : monsters) {
             if (!explosions.containsKey(monster)) {
                 AffineTransform monsterTransform = g2d.getTransform();
-                
+
                 if (monster == targetMonster && shakeFrame > 0) {
                     double shakeProgress = (double) shakeFrame / SHAKE_DURATION;
                     int shakeOffset = (int) (10 * Math.sin(shakeProgress * Math.PI * 4));
                     g2d.translate(shakeOffset, 0);
                 }
-                
+
                 monster.draw(g, width, height);
                 g2d.setTransform(monsterTransform);
             }
         }
-        
+
         // Now draw monsters with explosions and their explosions
         for (Monster monster : explosions.keySet()) {
             if (monsters.contains(monster)) {  // Only draw if monster is still in the game list
