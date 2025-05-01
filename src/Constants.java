@@ -57,6 +57,10 @@ public class Constants {
     public static final int FREEZE_DURATION = 3000; // 3 seconds
     public static final int PERFECT_HITS_FOR_POWERUP = 5; // Number of perfect hits needed
 
+    // Fortress properties
+    public static final int FORT_WIDTH = 500; 
+    public static final int FORT_HEIGHT = 500; 
+
     public static final Map<Integer, String[]> DIFFICULTY_WORDS = loadAllWordFiles();
     
     // Random generator for the game

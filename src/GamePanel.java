@@ -266,21 +266,30 @@ public class GamePanel extends JPanel {
             g2d.fillRect(0, 0, width, height);
         }
 
-        // Draw FortniKoKoAndMarie image at the left side, centered vertically
+        // Draw FortniKoKoAndMarie image at the left side with better scaling
         if (fortImage != null) {
-            int fortWidth = (int) (width * 0.5); 
-            int fortHeight = (int) (width * 0.5); 
-            int fortX = 0; 
-            int fortY = (height - fortHeight) / 2; 
+            int fortHeight = (int)(height * 0.75);
+            int fortWidth = (int)(fortHeight * 0.25);
+            
+            // Cap the maximum width to 30% of the panel width to prevent over-expansion
+            int maxFortWidth = (int)(width * 0.3);
+            if (fortWidth > maxFortWidth) {
+                fortWidth = maxFortWidth;
+                fortHeight = (int)(fortWidth * 1.5); // Recalculate height if width was capped
+            }
+            
+            // Position at left side, centered vertically
+            int fortX = 0;
+            int fortY = (height - fortHeight) / 2;
 
             g2d.drawImage(fortImage, fortX, fortY, fortWidth, fortHeight, this);
         }
 
         // Draw shooter with responsive size and x-offset
         if (SHOOTER_IMAGE != null) {
-            int shooterSize = Math.min(width, height) / 15; 
-            int shooterX = (int) (width * 0.040); 
-            int shooterY = (height - shooterSize) / 2; 
+            int shooterSize = Math.min(width, height) / 15; // Shooter size is 1/15th of the smaller dimension
+            int shooterX = (int) (width * 0.042); // Shooter x-offset is 4% of the panel width
+            int shooterY = (height - shooterSize) / 2; // Centered vertically
 
             double angle = 0;
             if (targetMonster != null) {
@@ -297,19 +306,10 @@ public class GamePanel extends JPanel {
             g2d.rotate(angle);
             g2d.drawImage(SHOOTER_IMAGE, -shooterSize / 2, -shooterSize / 2, shooterSize, shooterSize, null);
 
-            if (attackFrame > 0 && targetMonster != null) {
-                float alpha = (float) attackFrame / MAX_ATTACK_FRAMES;
-                g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
-                g2d.setColor(Color.YELLOW);
-                g2d.setStroke(new BasicStroke(5));
-                g2d.drawLine(0, 0, shooterSize * 3, 0);
-                g2d.fillOval(-shooterSize / 4, -shooterSize / 4, shooterSize / 2, shooterSize / 2);
-                g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
-            }
-
             g2d.setTransform(oldTransform);
         }
 
+        // Draw other elements (monsters, explosions, clouds, etc.)
         // Draw monsters - we draw normal monsters first, then monsters with explosions on top
         ArrayList<Monster> monsters = gameController.getMonsters();
 
