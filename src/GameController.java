@@ -155,8 +155,8 @@ public class GameController {
 
         // Define a vertical spawn range with a slight bias toward the top
         int centerY = panelHeight / 2;
-        int spawnRangeY = panelHeight / 4; // Spawn area height (e.g., 1/3 of the panel height)
-        int biasOffset = -panelHeight / 12; // Slight bias toward the top
+        int spawnRangeY = panelHeight / 4; 
+        int biasOffset = -panelHeight / 12; 
 
         // Randomize the y position within the vertical range
         int y = centerY - spawnRangeY / 2 + biasOffset + Constants.RANDOM.nextInt(spawnRangeY);
@@ -173,20 +173,20 @@ public class GameController {
         if (!gameRunning || gamePanel == null) return;
 
         int panelWidth = gamePanel.getWidth();
-        //int panelHeight = gamePanel.getHeight();
+        int thresholdX = (int) (panelWidth * 0.06); // 10% of the panel width
 
         ArrayList<Monster> monstersToRemove = new ArrayList<>();
-        
+
         for (Monster monster : monsters) {
             monster.update(panelWidth);
-            
+
             // Check if monster reached the base
-            if (monster.getX(panelWidth) <= 0) {
+            if (monster.getX(panelWidth) <= thresholdX) {
                 monstersToRemove.add(monster);
                 decreaseLives();
             }
         }
-        
+
         // Remove monsters after iteration
         if (!monstersToRemove.isEmpty()) {
             monsters.removeAll(monstersToRemove);
