@@ -339,7 +339,7 @@ public class GamePanel extends JPanel {
     private class ExplosionAnimation {
         private Monster monster; // Store reference to the monster
         private long startTime;
-        private int duration = 800; // Duration in milliseconds (1 second as specified)
+        private int duration = 450; // Duration in milliseconds (1 second as specified)
         
         public ExplosionAnimation(Monster monster) {
             this.monster = monster;
