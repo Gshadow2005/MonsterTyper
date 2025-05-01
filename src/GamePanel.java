@@ -7,6 +7,7 @@ public class GamePanel extends JPanel {
     private GameController gameController;
     private static final Image SHOOTER_IMAGE;
     private Image backgroundImage = null; // Background image instance
+    private Image cloudsImage = null; // Clouds image instance
     private Monster targetMonster;
     private Timer animationTimer;
     private Timer removalTimer;
@@ -43,6 +44,16 @@ public class GamePanel extends JPanel {
             }
         } catch (Exception e) {
             System.out.println("No default background image found or error loading it: " + e.getMessage());
+        }
+        
+        // Try to load clouds image
+        try {
+            ImageIcon cloudsIcon = new ImageIcon(GamePanel.class.getResource("/assets/CloudsniKoKoAndMarie.png"));
+            if (cloudsIcon.getIconWidth() > 0) {
+                cloudsImage = cloudsIcon.getImage();
+            }
+        } catch (Exception e) {
+            System.out.println("No clouds image found or error loading it: " + e.getMessage());
         }
         
         // Setup animation timer
@@ -237,6 +248,16 @@ public class GamePanel extends JPanel {
 
             monster.draw(g, width, height);
             g2d.setTransform(monsterTransform);
+        }
+
+        // Draw clouds above the monsters
+        if (cloudsImage != null) {
+            int cloudsWidth = width; // Adjust the width of the clouds
+            int cloudsHeight = height; // Stretch the clouds to match the panel height
+            int cloudsX = width - cloudsWidth; // Position at the right side
+            int cloudsY = 0; // Start at the top of the panel
+
+            g2d.drawImage(cloudsImage, cloudsX, cloudsY, cloudsWidth, cloudsHeight, this);
         }
     }
     
