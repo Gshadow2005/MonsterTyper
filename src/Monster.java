@@ -13,10 +13,9 @@ public class Monster {
     private String thirdWord;
     private double relativeX, relativeY;
 
-    // Safely load image using ImageIcon
     private static final Image MONSTER_IMAGE;
-    // New image for child monsters
     private static final Image CHILD_MONSTER_IMAGE;
+    private static final Image BOSS_MONSTER_IMAGE;
     
     // List to store medium words
     private static final List<String> MEDIUM_WORDS = new ArrayList<>();
@@ -25,6 +24,7 @@ public class Monster {
     static {
         ImageIcon monsterIcon = null;
         ImageIcon childMonsterIcon = null;
+        ImageIcon bossMonsterIcon = null;
         try {
             // Using absolute path with leading slash
             monsterIcon = new ImageIcon(Monster.class.getResource("/assets/MonsterTyper_Zombie.gif"));
@@ -39,11 +39,19 @@ public class Monster {
                 System.out.println("Warning: Child monster image loaded but has invalid dimensions");
                 childMonsterIcon = null;
             }
+            
+            // Load the boss monster image
+            bossMonsterIcon = new ImageIcon(Monster.class.getResource("/assets/MonsterTyper_Boss.gif"));
+            if (bossMonsterIcon.getIconWidth() <= 0) {
+                System.out.println("Warning: Boss monster image loaded but has invalid dimensions");
+                bossMonsterIcon = null;
+            }
         } catch (Exception e) {
             System.out.println("Failed to load monster images: " + e.getMessage());
         }
         MONSTER_IMAGE = (monsterIcon != null) ? monsterIcon.getImage() : null;
         CHILD_MONSTER_IMAGE = (childMonsterIcon != null) ? childMonsterIcon.getImage() : null;
+        BOSS_MONSTER_IMAGE = (bossMonsterIcon != null) ? bossMonsterIcon.getImage() : null;
 
         if (MONSTER_IMAGE == null) {
             System.out.println("Warning: MONSTER_IMAGE is null. Monster won't be drawn.");
@@ -51,6 +59,10 @@ public class Monster {
         
         if (CHILD_MONSTER_IMAGE == null) {
             System.out.println("Warning: CHILD_MONSTER_IMAGE is null. Child monsters will use placeholder.");
+        }
+        
+        if (BOSS_MONSTER_IMAGE == null) {
+            System.out.println("Warning: BOSS_MONSTER_IMAGE is null. Boss monsters will use placeholder.");
         }
         
         // Load medium words
@@ -198,7 +210,14 @@ public class Monster {
     }
 
     public void draw(Graphics g, int panelWidth, int panelHeight) {
-        Image imageToUse = isChildMonster ? CHILD_MONSTER_IMAGE : MONSTER_IMAGE;
+        Image imageToUse;
+        if (isChildMonster) {
+            imageToUse = CHILD_MONSTER_IMAGE;
+        } else if (canSplit) {
+            imageToUse = BOSS_MONSTER_IMAGE;
+        } else {
+            imageToUse = MONSTER_IMAGE;
+        }
         
         if (imageToUse == null) {
             drawPlaceholderMonster(g, panelWidth, panelHeight);
@@ -223,11 +242,11 @@ public class Monster {
             g2d.translate(0, bounceOffset);
             
             // Flash overlay
-            float alpha = (float)hitFlashFrame / MAX_HIT_FLASH_FRAMES;
-            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
-            g2d.setColor(Color.WHITE);
-            g2d.fillRect(realX - 5, realY - 5, scaledSize + 10, scaledSize + 10);
-            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+            //float alpha = (float)hitFlashFrame / MAX_HIT_FLASH_FRAMES;
+            //g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+            //g2d.setColor(Color.WHITE);
+            //g2d.fillRect(realX - 5, realY - 5, scaledSize + 10, scaledSize + 10);
+            //g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
         }
 
         // Flip image horizontally
@@ -293,6 +312,8 @@ public class Monster {
 
         if (isChildMonster) {
             g.setColor(new Color(100, 180, 100)); // Lighter green for children
+        } else if (canSplit) {
+            g.setColor(new Color(200, 130, 30)); // Orange for boss monsters
         } else {
             g.setColor(Color.GREEN);
         }
