@@ -14,27 +14,42 @@ public class Monster {
 
     // Safely load image using ImageIcon
     private static final Image MONSTER_IMAGE;
+    // New image for child monsters
+    private static final Image CHILD_MONSTER_IMAGE;
     
     // List to store medium words
     private static final List<String> MEDIUM_WORDS = new ArrayList<>();
     private static final String MEDIUM_WORDS_FILE = "/assets/words/medium_words.txt"; 
 
     static {
-        ImageIcon icon = null;
+        ImageIcon monsterIcon = null;
+        ImageIcon childMonsterIcon = null;
         try {
             // Using absolute path with leading slash
-            icon = new ImageIcon(Monster.class.getResource("/assets/MonsterTyper_Zombie.gif"));
-            if (icon.getIconWidth() <= 0) {
-                System.out.println("Warning: Image loaded but has invalid dimensions");
-                icon = null;
+            monsterIcon = new ImageIcon(Monster.class.getResource("/assets/MonsterTyper_Zombie.gif"));
+            if (monsterIcon.getIconWidth() <= 0) {
+                System.out.println("Warning: Monster image loaded but has invalid dimensions");
+                monsterIcon = null;
+            }
+            
+            // Load the child monster image
+            childMonsterIcon = new ImageIcon(Monster.class.getResource("/assets/bat.gif"));
+            if (childMonsterIcon.getIconWidth() <= 0) {
+                System.out.println("Warning: Child monster image loaded but has invalid dimensions");
+                childMonsterIcon = null;
             }
         } catch (Exception e) {
-            System.out.println("Failed to load monster image: " + e.getMessage());
+            System.out.println("Failed to load monster images: " + e.getMessage());
         }
-        MONSTER_IMAGE = (icon != null) ? icon.getImage() : null;
+        MONSTER_IMAGE = (monsterIcon != null) ? monsterIcon.getImage() : null;
+        CHILD_MONSTER_IMAGE = (childMonsterIcon != null) ? childMonsterIcon.getImage() : null;
 
         if (MONSTER_IMAGE == null) {
             System.out.println("Warning: MONSTER_IMAGE is null. Monster won't be drawn.");
+        }
+        
+        if (CHILD_MONSTER_IMAGE == null) {
+            System.out.println("Warning: CHILD_MONSTER_IMAGE is null. Child monsters will use placeholder.");
         }
         
         // Load medium words
@@ -169,7 +184,7 @@ public class Monster {
         double pixelsToMove = Constants.currentMonsterSpeed;
 
         if (isChildMonster) {
-            pixelsToMove *= 2.2; // monster speed smalll 
+            pixelsToMove *= 2.7; // monster speed small
         }
         double moveAmount = pixelsToMove / Constants.WIDTH;
         relativeX -= moveAmount;
@@ -181,7 +196,9 @@ public class Monster {
     }
 
     public void draw(Graphics g, int panelWidth, int panelHeight) {
-        if (MONSTER_IMAGE == null) {
+        Image imageToUse = isChildMonster ? CHILD_MONSTER_IMAGE : MONSTER_IMAGE;
+        
+        if (imageToUse == null) {
             drawPlaceholderMonster(g, panelWidth, panelHeight);
             return;
         }
@@ -214,7 +231,7 @@ public class Monster {
         // Flip image horizontally
         g2d.translate(realX + scaledSize, realY);
         g2d.scale(-1, 1);
-        g2d.drawImage(MONSTER_IMAGE, 0, 0, scaledSize, scaledSize, null);
+        g2d.drawImage(imageToUse, 0, 0, scaledSize, scaledSize, null);
 
         // Restore the original transform
         g2d.setTransform(oldTransform);
@@ -271,8 +288,7 @@ public class Monster {
                 scaledSize + 10
             );
         }
-        
-        // Draw a simple placeholder rectangle
+
         if (isChildMonster) {
             g.setColor(new Color(100, 180, 100)); // Lighter green for children
         } else {
@@ -400,7 +416,7 @@ public class Monster {
     
         int childSize = (int)(size * 0.5); // 50%
         
-        int childCount = 5; // children count
+        int childCount = 7; // children count
         Monster[] children = new Monster[childCount];
         
         for (int i = 0; i < childCount; i++) {

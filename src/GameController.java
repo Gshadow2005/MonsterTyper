@@ -235,6 +235,7 @@ public class GameController {
             // Trigger animation through the GamePanel
             if (gamePanel instanceof GamePanel) {
                 ((GamePanel) gamePanel).attackMonster(monsterToHit);
+                inputField.setText(""); 
                 return; // The animation will handle the rest
             }
             
