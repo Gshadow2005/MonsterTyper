@@ -9,7 +9,8 @@ import java.util.List;
 
 public class Monster {
     private String word;
-    private String secondWord; // Second word for boss monsters
+    private String secondWord; 
+    private String thirdWord;
     private double relativeX, relativeY;
 
     // Safely load image using ImageIcon
@@ -113,11 +114,12 @@ public class Monster {
             this.hasJamPower = false;
             this.hasExtraLife = false;
             this.hasReverseInputPower = false;
-            this.health = 2; // Health of boss
+            this.health = 3; // Health of boss
             this.size = (int)(Constants.MONSTER_SIZE * 2);
             
             // Generate a second word for the boss monster
             this.secondWord = getRandomMediumWord();
+            this.thirdWord = getRandomMediumWord();
         }
         // Jam power
         else if (powerRoll < Constants.SPLIT_CHANCE + Constants.JAM_POWER_CHANCE) {
@@ -257,7 +259,7 @@ public class Monster {
         g.fillRect(healthBarX, healthBarY, healthBarWidth, healthBarHeight);
         
         // Filled health based on current health
-        float healthPercent = health / (canSplit ? 2.0f : 1.0f);
+        float healthPercent = health / (canSplit ? 3.0f : 1.0f);
         int filledWidth = (int)(healthBarWidth * healthPercent);
         
         // Flash effect when hit
@@ -390,9 +392,13 @@ public class Monster {
     
     public void decreaseHealth() {
         health--;
-
-        if (canSplit && health == 1 && secondWord != null) {
-            word = secondWord;
+    
+        if (canSplit) {
+            if (health == 2 && secondWord != null) {
+                word = secondWord;
+            } else if (health == 1 && thirdWord != null) {
+                word = thirdWord;
+            }
         }
     }
     
