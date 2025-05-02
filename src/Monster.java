@@ -1,13 +1,23 @@
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import javax.swing.ImageIcon;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Monster {
     private String word;
+    private String secondWord; // Second word for boss monsters
     private double relativeX, relativeY;
 
     // Safely load image using ImageIcon
     private static final Image MONSTER_IMAGE;
+    
+    // List to store medium words
+    private static final List<String> MEDIUM_WORDS = new ArrayList<>();
+    private static final String MEDIUM_WORDS_FILE = "/assets/words/medium_words.txt"; 
 
     static {
         ImageIcon icon = null;
@@ -26,6 +36,39 @@ public class Monster {
         if (MONSTER_IMAGE == null) {
             System.out.println("Warning: MONSTER_IMAGE is null. Monster won't be drawn.");
         }
+        
+        // Load medium words
+        loadMediumWords();
+    }
+    
+    // Method to load medium words for child monsters
+    private static void loadMediumWords() {
+        try {
+            InputStream is = Monster.class.getResourceAsStream(MEDIUM_WORDS_FILE);
+            if (is == null) {
+                System.out.println("Warning: Could not find medium words file: " + MEDIUM_WORDS_FILE);
+                return;
+            }
+            
+            BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (!line.trim().isEmpty()) {
+                    MEDIUM_WORDS.add(line.trim());
+                }
+            }
+            reader.close();
+        } catch (Exception e) {
+            System.out.println("Error loading medium words: " + e.getMessage());
+        }
+    }
+    
+    // Get a random medium word
+    private static String getRandomMediumWord() {
+        if (MEDIUM_WORDS.isEmpty()) {
+            return "medium"; // Fallback word
+        }
+        return MEDIUM_WORDS.get(Constants.RANDOM.nextInt(MEDIUM_WORDS.size()));
     }
 
     private boolean hasJamPower;
@@ -55,8 +98,11 @@ public class Monster {
             this.hasJamPower = false;
             this.hasExtraLife = false;
             this.hasReverseInputPower = false;
-            this.health = 2; //health of boss
+            this.health = 2; // Health of boss
             this.size = (int)(Constants.MONSTER_SIZE * 2);
+            
+            // Generate a second word for the boss monster
+            this.secondWord = getRandomMediumWord();
         }
         // Jam power
         else if (powerRoll < Constants.SPLIT_CHANCE + Constants.JAM_POWER_CHANCE) {
@@ -123,7 +169,7 @@ public class Monster {
         double pixelsToMove = Constants.currentMonsterSpeed;
 
         if (isChildMonster) {
-            pixelsToMove *= 1.2;
+            pixelsToMove *= 2.2; // monster speed smalll 
         }
         double moveAmount = pixelsToMove / Constants.WIDTH;
         relativeX -= moveAmount;
@@ -328,6 +374,10 @@ public class Monster {
     
     public void decreaseHealth() {
         health--;
+
+        if (canSplit && health == 1 && secondWord != null) {
+            word = secondWord;
+        }
     }
     
     public int getSize() {
@@ -342,27 +392,33 @@ public class Monster {
         return relativeY;
     }
     
+
     public Monster[] split() {
         if (!canSplit) {
             return new Monster[0];
         }
-
+    
         int childSize = (int)(size * 0.5); // 50%
-        String childWord = word.length() > 3 ? word.substring(0, word.length() / 2) : word;
-
-        int childCount = 7; 
-        //int childCount = Constants.RANDOM.nextInt(2) + 2; // random 3 to 2 monsterheheh
+        
+        int childCount = 5; // children count
         Monster[] children = new Monster[childCount];
         
         for (int i = 0; i < childCount; i++) {
-            double offsetX = relativeX + (Constants.RANDOM.nextDouble() * 0.05 - 0.025);
-            double offsetY = relativeY + (Constants.RANDOM.nextDouble() * 0.05 - 0.025);
+            double spreadFactor = 0.15; 
 
-            String monsterWord = (childWord.length() > i) 
-                ? childWord.substring(i, i+1) 
-                : Character.toString('a' + Constants.RANDOM.nextInt(26));
+            double angle = (2 * Math.PI * i) / childCount; 
+            double distance = spreadFactor * (0.7 + 0.3 * Constants.RANDOM.nextDouble()); 
+            
+            double offsetX = relativeX + (distance * Math.cos(angle));
+            double offsetY = relativeY + (distance * Math.sin(angle));
+
+            offsetX = Math.max(0.05, Math.min(0.95, offsetX));
+            offsetY = Math.max(0.05, Math.min(0.95, offsetY));
+            
+            // Use medium words for child monsters
+            String childWord = getRandomMediumWord();
                 
-            children[i] = new Monster(offsetX, offsetY, monsterWord, childSize, true);
+            children[i] = new Monster(offsetX, offsetY, childWord, childSize, true);
         }
         
         return children;
