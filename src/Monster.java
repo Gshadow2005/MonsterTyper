@@ -55,7 +55,8 @@ public class Monster {
             this.hasJamPower = false;
             this.hasExtraLife = false;
             this.hasReverseInputPower = false;
-            this.health = 1; //health of boss
+            this.health = 2; //health of boss
+            this.size = (int)(Constants.MONSTER_SIZE * 2);
         }
         // Jam power
         else if (powerRoll < Constants.SPLIT_CHANCE + Constants.JAM_POWER_CHANCE) {
@@ -258,7 +259,7 @@ public class Monster {
         } else {
             // Normal color
             g.setColor(Color.WHITE);
-            g.setFont(new Font("Arial", Font.BOLD, isChildMonster ? 10 : 12));
+            g.setFont(new Font("Arial", Font.BOLD, isChildMonster ? 12 : 14));
         }
         
         FontMetrics fm = g.getFontMetrics();
@@ -342,20 +343,21 @@ public class Monster {
     }
     
     public Monster[] split() {
-        if (!canSplit || health > 0) {
+        if (!canSplit) {
             return new Monster[0];
         }
 
-        int childSize = (int)(size * 0.6);
+        int childSize = (int)(size * 0.5); // 50%
         String childWord = word.length() > 3 ? word.substring(0, word.length() / 2) : word;
 
-        int childCount = Constants.RANDOM.nextInt(2) + 2;
+        int childCount = 7; 
+        //int childCount = Constants.RANDOM.nextInt(2) + 2; // random 3 to 2 monsterheheh
         Monster[] children = new Monster[childCount];
         
         for (int i = 0; i < childCount; i++) {
             double offsetX = relativeX + (Constants.RANDOM.nextDouble() * 0.05 - 0.025);
             double offsetY = relativeY + (Constants.RANDOM.nextDouble() * 0.05 - 0.025);
-            
+
             String monsterWord = (childWord.length() > i) 
                 ? childWord.substring(i, i+1) 
                 : Character.toString('a' + Constants.RANDOM.nextInt(26));

@@ -190,7 +190,7 @@ public class GamePanel extends JPanel {
             if (canSplit) {
                 Monster[] children = monster.split();
                 for (Monster child : children) {
-                    gameController.getMonsters().add(child);
+                    gameController.addMonster(child);
                 }
             }
 
