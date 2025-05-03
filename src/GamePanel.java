@@ -23,6 +23,9 @@ public class GamePanel extends JPanel {
     private static final int MAX_ATTACK_FRAMES = 10;
     private static final int SHAKE_DURATION = 20;
     private int shakeFrame = 0;
+    private boolean shouldCenterShooter = false;
+    private long shooterCenterDelayMillis = 1000; // Default 1 second delay
+    private long shooterCenterTimeTarget = 0;
     
     // Explosion animation fields
     private ImageIcon explosionGif;
@@ -51,7 +54,6 @@ public class GamePanel extends JPanel {
                     LASER_BEAM_FRAMES[i] = null;
                 } else {
                     LASER_BEAM_FRAMES[i] = laserIcon.getImage();
-                    System.out.println("Successfully loaded Laser Beam frame " + (i + 1));
                 }
             } catch (Exception e) {
                 System.out.println("Failed to load Laser Beam frame " + (i + 1) + ": " + e.getMessage());
@@ -125,15 +127,21 @@ public class GamePanel extends JPanel {
     }
     
     public void setLaserAnimationSpeed(int speed) {
-        // ANIMATION SPEED CONTROL: This method lets you adjust animation speed
         if (speed < 1) speed = 1;
         this.laserAnimationSpeed = speed;
-        System.out.println("Laser animation speed set to: " + speed);
+    }
+
+    /**
+     * Sets the delay in milliseconds before the shooter centers after firing
+     * @param millis The delay in milliseconds
+     */
+    public void setShooterCenterDelay(long millis) {
+        if (millis < 0) millis = 0;
+        this.shooterCenterDelayMillis = millis;
+        System.out.println("Shooter centering delay set to: " + millis + "ms");
     }
 
     public void setLaserSize(int width, int height) {
-        // RESIZE CONTROL: This method lets you resize the laser images
-        // Load and resize all frames at once
         for (int i = 0; i < 14; i++) {
             try {
                 String path = "/assets/Laser/Laser_Beam" + (i + 1) + ".png";
@@ -142,7 +150,6 @@ public class GamePanel extends JPanel {
                     Image originalImage = originalIcon.getImage();
                     Image resizedImage = originalImage.getScaledInstance(width, height, Image.SCALE_SMOOTH);
                     LASER_BEAM_FRAMES[i] = resizedImage;
-                    System.out.println("Resized Laser Beam frame " + (i + 1) + " to " + width + "x" + height);
                 }
             } catch (Exception e) {
                 System.out.println("Failed to resize Laser Beam frame " + (i + 1) + ": " + e.getMessage());
@@ -173,6 +180,12 @@ public class GamePanel extends JPanel {
     
     private void updateAnimations() {
         if (!gameController.isGameRunning()) return;
+
+        if (shouldCenterShooter && System.currentTimeMillis() >= shooterCenterTimeTarget) {
+            targetMonster = null;
+            shouldCenterShooter = false;
+            repaint();
+        }
         
         if (isShootingAnimation) {
             frameCounter++;
@@ -186,6 +199,10 @@ public class GamePanel extends JPanel {
                         currentLaserFrame = 0;
                     } else {
                         isShootingAnimation = false;
+                        
+                        // When shooting animation ends, schedule shooter centering
+                        shouldCenterShooter = true;
+                        shooterCenterTimeTarget = System.currentTimeMillis() + shooterCenterDelayMillis;
                     }
                 }
             }
@@ -204,7 +221,7 @@ public class GamePanel extends JPanel {
             shakeFrame--;
         }
         
-        if (attackFrame == 0 && !isShootingAnimation) {
+        if (attackFrame == 0 && !isShootingAnimation && !shouldCenterShooter) {
             Monster newTarget = findTargetMonster();
             if (newTarget != null && newTarget != targetMonster) {
                 targetMonster = newTarget;
@@ -265,9 +282,6 @@ public class GamePanel extends JPanel {
             
             // Clear the input field
             gameController.getInputField().setText("");
-            
-            // Reset target
-            targetMonster = null;
         }
     }
     
@@ -300,6 +314,7 @@ public class GamePanel extends JPanel {
         isShootingAnimation = true; 
         currentLaserFrame = 0; 
         frameCounter = 0; 
+        shouldCenterShooter = false; // Cancel any pending centering when shooting
     }
     
     @Override
@@ -357,7 +372,6 @@ public class GamePanel extends JPanel {
             g2d.setTransform(oldTransform);
         }
 
-        // Draw other elements (monsters, explosions, clouds, etc.)
         // Draw monsters - we draw normal monsters first, then monsters with explosions on top
         ArrayList<Monster> monsters = gameController.getMonsters();
 
@@ -407,7 +421,7 @@ public class GamePanel extends JPanel {
     private class ExplosionAnimation {
         private Monster monster; // Store reference to the monster
         private long startTime;
-        private int duration = 450; // Duration in milliseconds (1 second as specified)
+        private int duration = 450; // Duration in milliseconds
         
         public ExplosionAnimation(Monster monster) {
             this.monster = monster;
