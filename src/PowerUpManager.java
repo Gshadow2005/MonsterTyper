@@ -62,6 +62,7 @@ public class PowerUpManager {
     private void updateStreakDisplay() {
         if (streakLabel != null) {
             streakLabel.setText("Perfect Streak: " + perfectStreak + "/15");
+            streakLabel.setText("Perfect Streak: " + perfectStreak + "/15");
             
             // Visual feedback when getting close to power-up
             if (perfectStreak >= 10) {
