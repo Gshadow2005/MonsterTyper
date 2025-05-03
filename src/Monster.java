@@ -127,7 +127,7 @@ public class Monster {
             this.hasExtraLife = false;
             this.hasReverseInputPower = false;
             this.health = 3; // Health of boss
-            this.size = (int)(Constants.MONSTER_SIZE * 2);
+            this.size = (int)(Constants.MONSTER_SIZE * 3.5);
             
             // Generate a second word for the boss monster
             this.secondWord = getRandomMediumWord();
