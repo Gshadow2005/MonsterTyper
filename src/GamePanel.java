@@ -100,6 +100,9 @@ public class GamePanel extends JPanel {
         // Setup animation timer
         animationTimer = new Timer(16, e -> updateAnimations());
         animationTimer.start();
+        
+        // Set initial laser size DIRI E EDIT
+        setLaserSize(100, 60);
     }
     
     /**
@@ -147,11 +150,7 @@ public class GamePanel extends JPanel {
         }
         repaint();
     }
-    
-    /**
-     * Sets a new explosion GIF from the assets folder
-     * @param filename The name of the GIF file in the assets folder (e.g., "explosion.gif")
-     */
+
     public void setExplosionGif(String filename) {
         try {
             ImageIcon icon = new ImageIcon(GamePanel.class.getResource("/assets/" + filename));
@@ -175,7 +174,6 @@ public class GamePanel extends JPanel {
     private void updateAnimations() {
         if (!gameController.isGameRunning()) return;
         
-
         if (isShootingAnimation) {
             frameCounter++;
 
@@ -184,7 +182,6 @@ public class GamePanel extends JPanel {
                 currentLaserFrame++;
 
                 if (currentLaserFrame >= LASER_BEAM_FRAMES.length) {
-
                     if (attackFrame > 0) {
                         currentLaserFrame = 0;
                     } else {
@@ -274,10 +271,6 @@ public class GamePanel extends JPanel {
         }
     }
     
-    /**
-     * Adds an explosion animation at the position of a defeated monster
-     * @param monster The monster that was defeated
-     */
     private void addExplosionAnimation(Monster monster) {
         if (explosionGif != null) {
             // Create explosion animation with monster reference
@@ -337,18 +330,16 @@ public class GamePanel extends JPanel {
             int targetY = 0;
             int shooterCenterX = shooterX + shooterSize / 2;
             int shooterCenterY = shooterY + shooterSize / 2;
-            double distance = 0;
             
             if (targetMonster != null) {
                 targetX = targetMonster.getX(width) + targetMonster.getSize() / 2;
                 targetY = targetMonster.getY(height) + targetMonster.getSize() / 2;
                 
                 angle = Math.atan2(targetY - shooterCenterY, targetX - shooterCenterX);
-                distance = Math.sqrt(Math.pow(targetX - shooterCenterX, 2) + Math.pow(targetY - shooterCenterY, 2));
             }
 
             AffineTransform oldTransform = g2d.getTransform();
-            g2d.translate(shooterX + shooterSize / 2, shooterY + shooterSize / 2);
+            g2d.translate(shooterCenterX, shooterCenterY);
             g2d.rotate(angle);
             
             // Draw the shooter
@@ -356,14 +347,11 @@ public class GamePanel extends JPanel {
             if (isShootingAnimation && currentLaserFrame < LASER_BEAM_FRAMES.length && LASER_BEAM_FRAMES[currentLaserFrame] != null) {
                 Image currentLaserImage = LASER_BEAM_FRAMES[currentLaserFrame];
 
-                int laserWidth = currentLaserImage.getWidth(this);
-                int laserHeight = currentLaserImage.getHeight(this);
-                
                 // Position the laser beam beside the shooter
-                int laserX = shooterSize / 2; // Right side of the shooter
-                int laserY = -laserHeight / 2; // Center vertically
+                int laserX = shooterSize / 3; // Right side of the shooter
+                int laserY = -currentLaserImage.getHeight(this) / 2; // Center vertically
 
-                g2d.drawImage(currentLaserImage, laserX, laserY, laserWidth, laserHeight, this);
+                g2d.drawImage(currentLaserImage, laserX, laserY, this);
             }
 
             g2d.setTransform(oldTransform);
