@@ -1,6 +1,10 @@
 import javax.swing.*;
 import java.awt.*;
 import java.util.Random;
+import javax.sound.sampled.*;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
 
 public class PowerUpManager {
     private GameController gameController;
@@ -10,6 +14,11 @@ public class PowerUpManager {
     private Timer resetStreakTimer; 
     private JLabel streakLabel;
     private JLabel powerUpNotification;
+    
+    // Sound file paths with improved path resolution
+    private final String SKIP_SOUND = "src/assets/Sounds/Skip1.wav";
+    private final String KILL_ALL_SOUND = "src/assets/Sounds/Execution.wav";
+    private final String FREEZE_SOUND = "src/assets/Sounds/Freezing.wav";
 
     public PowerUpManager(GameController gameController) {
         this.gameController = gameController;
@@ -40,6 +49,40 @@ public class PowerUpManager {
             
             gamePanel.add(topPanel, BorderLayout.NORTH);
             gamePanel.add(powerUpNotification, BorderLayout.SOUTH);
+        }
+    }
+
+    /**
+     * Plays a sound file
+     * @param soundFilePath Path to the sound file
+     */
+    private void playSound(String soundFilePath) {
+        try {
+            File soundFile = new File(soundFilePath);
+            
+            // Check if file exists to avoid "path not found" errors
+            if (!soundFile.exists()) {
+                System.err.println("Sound file not found: " + soundFilePath);
+                // Try alternative path resolution using ClassLoader
+                URL resourceUrl = getClass().getClassLoader().getResource(soundFilePath.replace("src/", ""));
+                if (resourceUrl != null) {
+                    soundFile = new File(resourceUrl.getFile());
+                } else {
+                    // Try parent directory as a fallback
+                    soundFile = new File("../" + soundFilePath);
+                    if (!soundFile.exists()) {
+                        System.err.println("Could not find sound file using alternative paths");
+                        return;
+                    }
+                }
+            }
+            
+            AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(soundFile);
+            Clip clip = AudioSystem.getClip();
+            clip.open(audioInputStream);
+            clip.start();
+        } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
+            System.err.println("Error playing sound effect: " + e.getMessage());
         }
     }
 
@@ -109,6 +152,9 @@ public class PowerUpManager {
     private void activateFreezePowerUp() {
         monstersFrozen = true;
         showPowerUpNotification("Freeze Activated!", Color.CYAN);
+        
+        // Play freeze sound effect
+        playSound(FREEZE_SOUND);
 
         if (freezeTimer != null && freezeTimer.isRunning()) {
             freezeTimer.stop();
@@ -140,6 +186,9 @@ public class PowerUpManager {
             gameController.increaseScore();
             showPowerUpNotification("Word Skipped!", Color.GREEN);
             
+            // Play skip sound effect
+            playSound(SKIP_SOUND);
+            
             // Flash effect for skip power-up
             if (gameController.getGamePanel() != null) {
                 JPanel panel = gameController.getGamePanel();
@@ -157,6 +206,10 @@ public class PowerUpManager {
     private void activateKillAllMonstersPowerUp() {
         if (!gameController.getMonsters().isEmpty()) {
             int monsterCount = gameController.getMonsters().size();
+            
+            // Play kill all monsters sound effect
+            playSound(KILL_ALL_SOUND);
+            
             for (int i = monsterCount - 1; i >= 0; i--) {
                 Monster monster = gameController.getMonsters().get(i);
                 gameController.removeMonster(monster);
