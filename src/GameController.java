@@ -334,14 +334,23 @@ public class GameController {
         // Show difficulty change notification
         JLabel notification = new JLabel("Difficulty increased to " + difficultyName + "!");
         notification.setForeground(notificationColor);
-        notification.setFont(new Font("Arial", Font.BOLD, 16));
+        notification.setFont(new Font("Arial", Font.BOLD, 21));
+        notification.setHorizontalAlignment(SwingConstants.CENTER); 
         
         JLayeredPane layeredPane = gamePanel.getRootPane().getLayeredPane();
+        int panelWidth = gamePanel.getWidth();
+        int panelHeight = gamePanel.getHeight();
+        
+        // Set notification size
+        int notificationWidth = 400;
+        int notificationHeight = 40;
+        
+        // Center the notification on the game panel
         notification.setBounds(
-            (gamePanel.getWidth() - 300) / 2, 
-            gamePanel.getHeight() / 3, 
-            300, 
-            30
+            (panelWidth - notificationWidth) / 2, 
+            panelHeight / 3, 
+            notificationWidth, 
+            notificationHeight
         );
         
         layeredPane.add(notification, JLayeredPane.POPUP_LAYER);

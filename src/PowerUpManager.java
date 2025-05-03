@@ -180,8 +180,14 @@ public class PowerUpManager {
     }
 
     private void activateSkipWordPowerUp() {
-        if (!gameController.getMonsters().isEmpty()) {
-            Monster toRemove = gameController.getMonsters().get(0);
+        if (gameController.getMonsters().size() > 1) {
+            int monsterIndex = 1; 
+
+            if (gameController.getMonsters().size() > 2) {
+                monsterIndex = 1 + new Random().nextInt(gameController.getMonsters().size() - 1);
+            }
+            
+            Monster toRemove = gameController.getMonsters().get(monsterIndex);
             gameController.removeMonster(toRemove);
             gameController.increaseScore();
             showPowerUpNotification("Word Skipped!", Color.GREEN);
@@ -200,6 +206,9 @@ public class PowerUpManager {
                 restoreTimer.setRepeats(false);
                 restoreTimer.start();
             }
+        } else if (gameController.getMonsters().size() == 1) {
+            showPowerUpNotification("No Other Words to Skip!", Color.YELLOW);
+            playSound(SKIP_SOUND);
         }
     }
     
