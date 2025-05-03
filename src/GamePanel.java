@@ -13,7 +13,7 @@ public class GamePanel extends JPanel {
     private static final Image[] LASER_BEAM_FRAMES; 
     private boolean isShootingAnimation = false; 
     private int currentLaserFrame = 0; 
-    private int laserAnimationSpeed = 2; 
+    private int laserAnimationSpeed = 1; 
     private int frameCounter = 0; 
     private Image backgroundImage = null; 
     private Image cloudsImage = null; 
