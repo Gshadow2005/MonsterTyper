@@ -25,7 +25,7 @@ public class GamePanel extends JPanel {
     static {
         ImageIcon icon = null;
         try {
-            icon = new ImageIcon(GamePanel.class.getResource("/assets/MonsterTyper_Shooter.png"));
+            icon = new ImageIcon(GamePanel.class.getResource("/assets/Shooter.gif"));
             if (icon.getIconWidth() <= 0) {
                 System.out.println("Warning: Shooter image loaded but has invalid dimensions");
                 icon = null;
@@ -190,7 +190,7 @@ public class GamePanel extends JPanel {
             if (canSplit) {
                 Monster[] children = monster.split();
                 for (Monster child : children) {
-                    gameController.getMonsters().add(child);
+                    gameController.addMonster(child);
                 }
             }
 

@@ -1,31 +1,102 @@
 import java.awt.*;
 import java.awt.geom.AffineTransform;
 import javax.swing.ImageIcon;
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Monster {
     private String word;
+    private String secondWord; 
+    private String thirdWord;
     private double relativeX, relativeY;
 
-    // Safely load image using ImageIcon
     private static final Image MONSTER_IMAGE;
+    private static final Image CHILD_MONSTER_IMAGE;
+    private static final Image BOSS_MONSTER_IMAGE;
+    
+    // List to store medium words
+    private static final List<String> MEDIUM_WORDS = new ArrayList<>();
+    private static final String MEDIUM_WORDS_FILE = "/assets/words/medium_words.txt"; 
 
     static {
-        ImageIcon icon = null;
+        ImageIcon monsterIcon = null;
+        ImageIcon childMonsterIcon = null;
+        ImageIcon bossMonsterIcon = null;
         try {
             // Using absolute path with leading slash
-            icon = new ImageIcon(Monster.class.getResource("/assets/MonsterTyper_Zombie.gif"));
-            if (icon.getIconWidth() <= 0) {
-                System.out.println("Warning: Image loaded but has invalid dimensions");
-                icon = null;
+            monsterIcon = new ImageIcon(Monster.class.getResource("/assets/MonsterTyper_Zombie.gif"));
+            if (monsterIcon.getIconWidth() <= 0) {
+                System.out.println("Warning: Monster image loaded but has invalid dimensions");
+                monsterIcon = null;
+            }
+            
+            // Load the child monster image
+            childMonsterIcon = new ImageIcon(Monster.class.getResource("/assets/bat.gif"));
+            if (childMonsterIcon.getIconWidth() <= 0) {
+                System.out.println("Warning: Child monster image loaded but has invalid dimensions");
+                childMonsterIcon = null;
+            }
+            
+            // Load the boss monster image
+            bossMonsterIcon = new ImageIcon(Monster.class.getResource("/assets/MonsterTyper_Boss.gif"));
+            if (bossMonsterIcon.getIconWidth() <= 0) {
+                System.out.println("Warning: Boss monster image loaded but has invalid dimensions");
+                bossMonsterIcon = null;
             }
         } catch (Exception e) {
-            System.out.println("Failed to load monster image: " + e.getMessage());
+            System.out.println("Failed to load monster images: " + e.getMessage());
         }
-        MONSTER_IMAGE = (icon != null) ? icon.getImage() : null;
+        MONSTER_IMAGE = (monsterIcon != null) ? monsterIcon.getImage() : null;
+        CHILD_MONSTER_IMAGE = (childMonsterIcon != null) ? childMonsterIcon.getImage() : null;
+        BOSS_MONSTER_IMAGE = (bossMonsterIcon != null) ? bossMonsterIcon.getImage() : null;
 
         if (MONSTER_IMAGE == null) {
             System.out.println("Warning: MONSTER_IMAGE is null. Monster won't be drawn.");
         }
+        
+        if (CHILD_MONSTER_IMAGE == null) {
+            System.out.println("Warning: CHILD_MONSTER_IMAGE is null. Child monsters will use placeholder.");
+        }
+        
+        if (BOSS_MONSTER_IMAGE == null) {
+            System.out.println("Warning: BOSS_MONSTER_IMAGE is null. Boss monsters will use placeholder.");
+        }
+        
+        // Load medium words
+        loadMediumWords();
+    }
+    
+    // Method to load medium words for child monsters
+    private static void loadMediumWords() {
+        try {
+            InputStream is = Monster.class.getResourceAsStream(MEDIUM_WORDS_FILE);
+            if (is == null) {
+                System.out.println("Warning: Could not find medium words file: " + MEDIUM_WORDS_FILE);
+                return;
+            }
+            
+            BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (!line.trim().isEmpty()) {
+                    MEDIUM_WORDS.add(line.trim());
+                }
+            }
+            reader.close();
+        } catch (Exception e) {
+            System.out.println("Error loading medium words: " + e.getMessage());
+        }
+    }
+    
+    // Get a random medium word
+    private static String getRandomMediumWord() {
+        if (MEDIUM_WORDS.isEmpty()) {
+            return "medium"; // Fallback word
+        }
+        return MEDIUM_WORDS.get(Constants.RANDOM.nextInt(MEDIUM_WORDS.size()));
     }
 
     private boolean hasJamPower;
@@ -55,7 +126,12 @@ public class Monster {
             this.hasJamPower = false;
             this.hasExtraLife = false;
             this.hasReverseInputPower = false;
-            this.health = 1; //health of boss
+            this.health = 3; // Health of boss
+            this.size = (int)(Constants.MONSTER_SIZE * 2);
+            
+            // Generate a second word for the boss monster
+            this.secondWord = getRandomMediumWord();
+            this.thirdWord = getRandomMediumWord();
         }
         // Jam power
         else if (powerRoll < Constants.SPLIT_CHANCE + Constants.JAM_POWER_CHANCE) {
@@ -122,7 +198,7 @@ public class Monster {
         double pixelsToMove = Constants.currentMonsterSpeed;
 
         if (isChildMonster) {
-            pixelsToMove *= 1.2;
+            pixelsToMove *= 2.7; // monster speed small
         }
         double moveAmount = pixelsToMove / Constants.WIDTH;
         relativeX -= moveAmount;
@@ -134,7 +210,16 @@ public class Monster {
     }
 
     public void draw(Graphics g, int panelWidth, int panelHeight) {
-        if (MONSTER_IMAGE == null) {
+        Image imageToUse;
+        if (isChildMonster) {
+            imageToUse = CHILD_MONSTER_IMAGE;
+        } else if (canSplit) {
+            imageToUse = BOSS_MONSTER_IMAGE;
+        } else {
+            imageToUse = MONSTER_IMAGE;
+        }
+        
+        if (imageToUse == null) {
             drawPlaceholderMonster(g, panelWidth, panelHeight);
             return;
         }
@@ -157,17 +242,17 @@ public class Monster {
             g2d.translate(0, bounceOffset);
             
             // Flash overlay
-            float alpha = (float)hitFlashFrame / MAX_HIT_FLASH_FRAMES;
-            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
-            g2d.setColor(Color.WHITE);
-            g2d.fillRect(realX - 5, realY - 5, scaledSize + 10, scaledSize + 10);
-            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
+            //float alpha = (float)hitFlashFrame / MAX_HIT_FLASH_FRAMES;
+            //g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+            //g2d.setColor(Color.WHITE);
+            //g2d.fillRect(realX - 5, realY - 5, scaledSize + 10, scaledSize + 10);
+            //g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
         }
 
         // Flip image horizontally
         g2d.translate(realX + scaledSize, realY);
         g2d.scale(-1, 1);
-        g2d.drawImage(MONSTER_IMAGE, 0, 0, scaledSize, scaledSize, null);
+        g2d.drawImage(imageToUse, 0, 0, scaledSize, scaledSize, null);
 
         // Restore the original transform
         g2d.setTransform(oldTransform);
@@ -193,7 +278,7 @@ public class Monster {
         g.fillRect(healthBarX, healthBarY, healthBarWidth, healthBarHeight);
         
         // Filled health based on current health
-        float healthPercent = health / (canSplit ? 2.0f : 1.0f);
+        float healthPercent = health / (canSplit ? 3.0f : 1.0f);
         int filledWidth = (int)(healthBarWidth * healthPercent);
         
         // Flash effect when hit
@@ -224,10 +309,11 @@ public class Monster {
                 scaledSize + 10
             );
         }
-        
-        // Draw a simple placeholder rectangle
+
         if (isChildMonster) {
             g.setColor(new Color(100, 180, 100)); // Lighter green for children
+        } else if (canSplit) {
+            g.setColor(new Color(200, 130, 30)); // Orange for boss monsters
         } else {
             g.setColor(Color.GREEN);
         }
@@ -258,7 +344,7 @@ public class Monster {
         } else {
             // Normal color
             g.setColor(Color.WHITE);
-            g.setFont(new Font("Arial", Font.BOLD, isChildMonster ? 10 : 12));
+            g.setFont(new Font("Arial", Font.BOLD, isChildMonster ? 12 : 14));
         }
         
         FontMetrics fm = g.getFontMetrics();
@@ -327,6 +413,14 @@ public class Monster {
     
     public void decreaseHealth() {
         health--;
+    
+        if (canSplit) {
+            if (health == 2 && secondWord != null) {
+                word = secondWord;
+            } else if (health == 1 && thirdWord != null) {
+                word = thirdWord;
+            }
+        }
     }
     
     public int getSize() {
@@ -341,26 +435,33 @@ public class Monster {
         return relativeY;
     }
     
+
     public Monster[] split() {
-        if (!canSplit || health > 0) {
+        if (!canSplit) {
             return new Monster[0];
         }
-
-        int childSize = (int)(size * 0.6);
-        String childWord = word.length() > 3 ? word.substring(0, word.length() / 2) : word;
-
-        int childCount = Constants.RANDOM.nextInt(2) + 2;
+    
+        int childSize = (int)(size * 0.5); // 50%
+        
+        int childCount = 7; // children count
         Monster[] children = new Monster[childCount];
         
         for (int i = 0; i < childCount; i++) {
-            double offsetX = relativeX + (Constants.RANDOM.nextDouble() * 0.05 - 0.025);
-            double offsetY = relativeY + (Constants.RANDOM.nextDouble() * 0.05 - 0.025);
+            double spreadFactor = 0.15; 
+
+            double angle = (2 * Math.PI * i) / childCount; 
+            double distance = spreadFactor * (0.7 + 0.3 * Constants.RANDOM.nextDouble()); 
             
-            String monsterWord = (childWord.length() > i) 
-                ? childWord.substring(i, i+1) 
-                : Character.toString('a' + Constants.RANDOM.nextInt(26));
+            double offsetX = relativeX + (distance * Math.cos(angle));
+            double offsetY = relativeY + (distance * Math.sin(angle));
+
+            offsetX = Math.max(0.05, Math.min(0.95, offsetX));
+            offsetY = Math.max(0.05, Math.min(0.95, offsetY));
+            
+            // Use medium words for child monsters
+            String childWord = getRandomMediumWord();
                 
-            children[i] = new Monster(offsetX, offsetY, monsterWord, childSize, true);
+            children[i] = new Monster(offsetX, offsetY, childWord, childSize, true);
         }
         
         return children;

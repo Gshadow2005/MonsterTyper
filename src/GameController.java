@@ -172,6 +172,12 @@ public class GameController {
         Monster monster = new Monster(x, y, word);
         monsters.add(monster);
     }
+
+    public void addMonster(Monster monster) {
+        if (monster != null) {
+            monsters.add(monster);
+        }
+    }
     
     private void updateGame() {
         if (!gameRunning || gamePanel == null) return;
@@ -229,6 +235,7 @@ public class GameController {
             // Trigger animation through the GamePanel
             if (gamePanel instanceof GamePanel) {
                 ((GamePanel) gamePanel).attackMonster(monsterToHit);
+                inputField.setText(""); 
                 return; // The animation will handle the rest
             }
             
