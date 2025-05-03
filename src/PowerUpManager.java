@@ -51,8 +51,8 @@ public class PowerUpManager {
         perfectStreak++;
         updateStreakDisplay();
 
-        // Every 20 perfect hits triggers a random power-up
-        if (perfectStreak >= 15) {
+        // Every 15 perfect hits triggers a random power-up
+        if (perfectStreak >= 1) {
             activateRandomPowerUp();
             perfectStreak = 0;
             updateStreakDisplay();
@@ -61,7 +61,6 @@ public class PowerUpManager {
 
     private void updateStreakDisplay() {
         if (streakLabel != null) {
-            streakLabel.setText("Perfect Streak: " + perfectStreak + "/15");
             streakLabel.setText("Perfect Streak: " + perfectStreak + "/15");
             
             // Visual feedback when getting close to power-up
@@ -96,12 +95,14 @@ public class PowerUpManager {
     }
 
     private void activateRandomPowerUp() {
-        int choice = new Random().nextInt(2); // 0 or 1
+        int choice = new Random().nextInt(3); // 0, 1, or 2
 
         if (choice == 0) {
             activateFreezePowerUp();
-        } else {
+        } else if (choice == 1) {
             activateSkipWordPowerUp();
+        } else {
+            activateKillAllMonstersPowerUp();
         }
     }
 
@@ -144,6 +145,31 @@ public class PowerUpManager {
                 JPanel panel = gameController.getGamePanel();
                 Color original = panel.getBackground();
                 panel.setBackground(new Color(200, 255, 200)); // Light green
+                Timer restoreTimer = new Timer(500, e -> {
+                    panel.setBackground(original);
+                });
+                restoreTimer.setRepeats(false);
+                restoreTimer.start();
+            }
+        }
+    }
+    
+    private void activateKillAllMonstersPowerUp() {
+        if (!gameController.getMonsters().isEmpty()) {
+            int monsterCount = gameController.getMonsters().size();
+            for (int i = monsterCount - 1; i >= 0; i--) {
+                Monster monster = gameController.getMonsters().get(i);
+                gameController.removeMonster(monster);
+                gameController.increaseScore();
+            }
+            
+            showPowerUpNotification("All Monsters Defeated!", Color.RED);
+            
+            // Flash effect for kill all monsters power-up
+            if (gameController.getGamePanel() != null) {
+                JPanel panel = gameController.getGamePanel();
+                Color original = panel.getBackground();
+                panel.setBackground(new Color(255, 150, 150)); // Light red
                 Timer restoreTimer = new Timer(500, e -> {
                     panel.setBackground(original);
                 });
