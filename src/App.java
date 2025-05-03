@@ -12,6 +12,15 @@ public class App extends JFrame implements GameController.GameEventListener {
     private JPanel gameContainer;
     private GameController gameController;
     
+    // Define button colors
+    private static final Color BUTTON_HOVER_COLOR = new Color(139, 0, 0);
+    private static final Color BUTTON_NORMAL_COLOR = new Color(60, 60, 150);
+    private static final Color BUTTON_PRESSED_COLOR = new Color(50, 50, 120);
+    
+    // Animation properties
+    private static final int ANIMATION_DURATION = 200; // milliseconds
+    private static final int ANIMATION_STEPS = 10;
+    
     public App() {
         setTitle("Monster Typer");
         setSize(Constants.WIDTH, Constants.HEIGHT);
@@ -134,20 +143,78 @@ public class App extends JFrame implements GameController.GameEventListener {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         buttonPanel.setOpaque(false);
 
-        JButton backButton = new JButton("Back to Menu") {
+        class AnimatedButton extends JButton {
+            private Color currentColor = BUTTON_NORMAL_COLOR;
+            private Color targetColor = BUTTON_NORMAL_COLOR;
+            private Timer animationTimer;
+            private float animationProgress = 0f;
+            
+            public AnimatedButton(String text) {
+                super(text);
+                setupAnimation();
+            }
+            
+            private void setupAnimation() {
+                animationTimer = new Timer(ANIMATION_DURATION / ANIMATION_STEPS, e -> {
+                    animationProgress += 1.0f / ANIMATION_STEPS;
+                    
+                    if (animationProgress >= 1.0f) {
+                        animationProgress = 1.0f;
+                        currentColor = targetColor;
+                        ((Timer)e.getSource()).stop();
+                    } else {
+                        currentColor = interpolateColor(currentColor, targetColor, animationProgress);
+                    }
+                    
+                    repaint();
+                });
+
+                addMouseListener(new java.awt.event.MouseAdapter() {
+                    @Override
+                    public void mouseEntered(java.awt.event.MouseEvent evt) {
+                        startColorTransition(BUTTON_HOVER_COLOR);
+                    }
+                    
+                    @Override
+                    public void mouseExited(java.awt.event.MouseEvent evt) {
+                        startColorTransition(BUTTON_NORMAL_COLOR);
+                    }
+                    
+                    @Override
+                    public void mousePressed(java.awt.event.MouseEvent evt) {
+                        startColorTransition(BUTTON_PRESSED_COLOR);
+                    }
+                    
+                    @Override
+                    public void mouseReleased(java.awt.event.MouseEvent evt) {
+                        if (getModel().isRollover()) {
+                            startColorTransition(BUTTON_HOVER_COLOR);
+                        } else {
+                            startColorTransition(BUTTON_NORMAL_COLOR);
+                        }
+                    }
+                });
+            }
+            
+            private void startColorTransition(Color newTargetColor) {
+                targetColor = newTargetColor;
+                animationProgress = 0f;
+                animationTimer.restart();
+            }
+            
+            private Color interpolateColor(Color c1, Color c2, float fraction) {
+                int red = (int)(c1.getRed() + fraction * (c2.getRed() - c1.getRed()));
+                int green = (int)(c1.getGreen() + fraction * (c2.getGreen() - c1.getGreen()));
+                int blue = (int)(c1.getBlue() + fraction * (c2.getBlue() - c1.getBlue()));
+                return new Color(red, green, blue);
+            }
+            
             @Override
             protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 
-                if (getModel().isPressed()) {
-                    g2.setColor(new Color(50, 50, 120)); 
-                } else if (getModel().isRollover()) {
-                    g2.setColor(new Color(80, 80, 180)); 
-                } else {
-                    g2.setColor(new Color(60, 60, 150));
-                }
-                
+                g2.setColor(currentColor);
                 g2.fillRoundRect(0, 0, getWidth(), getHeight(), 20, 20);
                 
                 FontMetrics fm = g2.getFontMetrics();
@@ -160,8 +227,9 @@ public class App extends JFrame implements GameController.GameEventListener {
                 g2.drawString(getText(), textX, textY);
                 g2.dispose();
             }
-        };
+        }
         
+        JButton backButton = new AnimatedButton("Back to Menu");
         backButton.setFocusPainted(false);
         backButton.setBorderPainted(false);
         backButton.setContentAreaFilled(false);
