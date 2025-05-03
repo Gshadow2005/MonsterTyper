@@ -10,7 +10,7 @@ public class GamePanel extends JPanel {
     private static final Image SHOOTER_IMAGE;
     private Image backgroundImage = null; 
     private Image cloudsImage = null; 
-    private Image fortImage = null; // Image for FortniKoKoAndMarie
+    // Removed fortImage variable
     private Monster targetMonster;
     private Timer animationTimer;
     private int attackFrame = 0;
@@ -61,17 +61,7 @@ public class GamePanel extends JPanel {
             System.out.println("No clouds image found or error loading it: " + e.getMessage());
         }
         
-        // Try to load FortniKoKoAndMarie image
-        try {
-            ImageIcon fortIcon = new ImageIcon(GamePanel.class.getResource("/assets/FortniKoKoAndMarie.png"));
-            if (fortIcon.getIconWidth() > 0) {
-                fortImage = fortIcon.getImage();
-            } else {
-                System.out.println("Warning: FortniKoKoAndMarie image loaded but has invalid dimensions");
-            }
-        } catch (Exception e) {
-            System.out.println("Failed to load FortniKoKoAndMarie image: " + e.getMessage());
-        }
+        // Removed code for loading FortniKoKoAndMarie image
         
         // Try to load explosion GIF
         try {
@@ -266,24 +256,7 @@ public class GamePanel extends JPanel {
             g2d.fillRect(0, 0, width, height);
         }
 
-        // Draw FortniKoKoAndMarie image at the left side with better scaling
-        if (fortImage != null) {
-            int fortHeight = (int)(height * 0.75);
-            int fortWidth = (int)(fortHeight * 0.25);
-            
-            // Cap the maximum width to 30% of the panel width to prevent over-expansion
-            int maxFortWidth = (int)(width * 0.3);
-            if (fortWidth > maxFortWidth) {
-                fortWidth = maxFortWidth;
-                fortHeight = (int)(fortWidth * 1.5); // Recalculate height if width was capped
-            }
-            
-            // Position at left side, centered vertically
-            int fortX = 0;
-            int fortY = (height - fortHeight) / 2;
-
-            g2d.drawImage(fortImage, fortX, fortY, fortWidth, fortHeight, this);
-        }
+        // Removed drawing code for FortniKoKoAndMarie image
 
         // Draw shooter with responsive size and x-offset
         if (SHOOTER_IMAGE != null) {
