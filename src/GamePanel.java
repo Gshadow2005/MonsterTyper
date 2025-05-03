@@ -10,7 +10,6 @@ public class GamePanel extends JPanel {
     private static final Image SHOOTER_IMAGE;
     private Image backgroundImage = null; 
     private Image cloudsImage = null; 
-    // Removed fortImage variable
     private Monster targetMonster;
     private Timer animationTimer;
     private int attackFrame = 0;
@@ -60,9 +59,7 @@ public class GamePanel extends JPanel {
         } catch (Exception e) {
             System.out.println("No clouds image found or error loading it: " + e.getMessage());
         }
-        
-        // Removed code for loading FortniKoKoAndMarie image
-        
+    
         // Try to load explosion GIF
         try {
             explosionGif = new ImageIcon(GamePanel.class.getResource("/assets/explosion.gif"));
@@ -118,9 +115,6 @@ public class GamePanel extends JPanel {
         }
     }
     
-    /**
-     * Removes the background image (sets background to black)
-     */
     public void clearBackgroundImage() {
         backgroundImage = null;
         repaint();
@@ -255,9 +249,7 @@ public class GamePanel extends JPanel {
             g2d.setColor(Color.BLACK);
             g2d.fillRect(0, 0, width, height);
         }
-
-        // Removed drawing code for FortniKoKoAndMarie image
-
+        
         // Draw shooter with responsive size and x-offset
         if (SHOOTER_IMAGE != null) {
             int shooterSize = Math.min(width, height) / 15; // Shooter size is 1/15th of the smaller dimension
