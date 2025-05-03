@@ -32,7 +32,7 @@ public class GameOver extends JPanel {
         logoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         // Game Over title
-        JLabel gameOverLabel = new JLabel("Game Over");
+        JLabel gameOverLabel = new JLabel("");
         gameOverLabel.setFont(new Font("Monospaced", Font.BOLD, 48));
         gameOverLabel.setForeground(new Color(139, 0, 0));
         gameOverLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -240,14 +240,14 @@ public class GameOver extends JPanel {
     }
     
     private ImageIcon loadLogoGif() {
-        URL gifUrl = getClass().getResource("/assets/gameover.gif");
+        URL gifUrl = getClass().getResource("/assets/Undertale.gif");
         
         if (gifUrl != null) {
             return new ImageIcon(gifUrl);
         }
         
         try {
-            java.io.File file = new java.io.File("assets/gameover.gif");
+            java.io.File file = new java.io.File("assets/Undertale.gif");
             if (file.exists()) {
                 return new ImageIcon(file.getAbsolutePath());
             }
