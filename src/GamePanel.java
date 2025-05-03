@@ -249,7 +249,7 @@ public class GamePanel extends JPanel {
             g2d.setColor(Color.BLACK);
             g2d.fillRect(0, 0, width, height);
         }
-        
+
         // Draw shooter with responsive size and x-offset
         if (SHOOTER_IMAGE != null) {
             int shooterSize = Math.min(width, height) / 15; // Shooter size is 1/15th of the smaller dimension
@@ -294,11 +294,8 @@ public class GamePanel extends JPanel {
             }
         }
 
-        // Now draw monsters with explosions and their explosions
         for (Monster monster : explosions.keySet()) {
-            if (monsters.contains(monster)) {  // Only draw if monster is still in the game list
-                // Don't draw the monster itself - it's being replaced by the explosion
-                // Draw the explosion at the monster's current position
+            if (monsters.contains(monster)) {  
                 explosions.get(monster).draw(g2d, width, height);
             }
         }
