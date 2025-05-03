@@ -8,6 +8,13 @@ import java.util.Iterator;
 public class GamePanel extends JPanel {
     private GameController gameController;
     private static final Image SHOOTER_IMAGE;
+    
+    // Laser beam animation properties
+    private static final Image[] LASER_BEAM_FRAMES; 
+    private boolean isShootingAnimation = false; 
+    private int currentLaserFrame = 0; 
+    private int laserAnimationSpeed = 2; 
+    private int frameCounter = 0; 
     private Image backgroundImage = null; 
     private Image cloudsImage = null; 
     private Monster targetMonster;
@@ -33,6 +40,24 @@ public class GamePanel extends JPanel {
             System.out.println("Failed to load shooter image: " + e.getMessage());
         }
         SHOOTER_IMAGE = (icon != null) ? icon.getImage() : null;
+        
+        LASER_BEAM_FRAMES = new Image[14];
+        for (int i = 0; i < 14; i++) {
+            try {
+                String path = "/assets/Laser/Laser_Beam" + (i + 1) + ".png";
+                ImageIcon laserIcon = new ImageIcon(GamePanel.class.getResource(path));
+                if (laserIcon.getIconWidth() <= 0) {
+                    System.out.println("Warning: Laser Beam frame " + (i + 1) + " loaded but has invalid dimensions");
+                    LASER_BEAM_FRAMES[i] = null;
+                } else {
+                    LASER_BEAM_FRAMES[i] = laserIcon.getImage();
+                    System.out.println("Successfully loaded Laser Beam frame " + (i + 1));
+                }
+            } catch (Exception e) {
+                System.out.println("Failed to load Laser Beam frame " + (i + 1) + ": " + e.getMessage());
+                LASER_BEAM_FRAMES[i] = null;
+            }
+        }
     }
     
     public GamePanel(GameController gameController) {
@@ -96,6 +121,33 @@ public class GamePanel extends JPanel {
         }
     }
     
+    public void setLaserAnimationSpeed(int speed) {
+        // ANIMATION SPEED CONTROL: This method lets you adjust animation speed
+        if (speed < 1) speed = 1;
+        this.laserAnimationSpeed = speed;
+        System.out.println("Laser animation speed set to: " + speed);
+    }
+
+    public void setLaserSize(int width, int height) {
+        // RESIZE CONTROL: This method lets you resize the laser images
+        // Load and resize all frames at once
+        for (int i = 0; i < 14; i++) {
+            try {
+                String path = "/assets/Laser/Laser_Beam" + (i + 1) + ".png";
+                ImageIcon originalIcon = new ImageIcon(GamePanel.class.getResource(path));
+                if (originalIcon.getIconWidth() > 0) {
+                    Image originalImage = originalIcon.getImage();
+                    Image resizedImage = originalImage.getScaledInstance(width, height, Image.SCALE_SMOOTH);
+                    LASER_BEAM_FRAMES[i] = resizedImage;
+                    System.out.println("Resized Laser Beam frame " + (i + 1) + " to " + width + "x" + height);
+                }
+            } catch (Exception e) {
+                System.out.println("Failed to resize Laser Beam frame " + (i + 1) + ": " + e.getMessage());
+            }
+        }
+        repaint();
+    }
+    
     /**
      * Sets a new explosion GIF from the assets folder
      * @param filename The name of the GIF file in the assets folder (e.g., "explosion.gif")
@@ -123,10 +175,31 @@ public class GamePanel extends JPanel {
     private void updateAnimations() {
         if (!gameController.isGameRunning()) return;
         
+
+        if (isShootingAnimation) {
+            frameCounter++;
+
+            if (frameCounter >= laserAnimationSpeed) {
+                frameCounter = 0;
+                currentLaserFrame++;
+
+                if (currentLaserFrame >= LASER_BEAM_FRAMES.length) {
+
+                    if (attackFrame > 0) {
+                        currentLaserFrame = 0;
+                    } else {
+                        isShootingAnimation = false;
+                    }
+                }
+            }
+        }
+        
         if (attackFrame > 0) {
             attackFrame--;
-            if (attackFrame == 0 && targetMonster != null) {
-                handleMonsterHit(targetMonster);
+            if (attackFrame == 0) {
+                if (targetMonster != null) {
+                    handleMonsterHit(targetMonster);
+                }
             }
         }
         
@@ -134,7 +207,7 @@ public class GamePanel extends JPanel {
             shakeFrame--;
         }
         
-        if (attackFrame == 0) {
+        if (attackFrame == 0 && !isShootingAnimation) {
             Monster newTarget = findTargetMonster();
             if (newTarget != null && newTarget != targetMonster) {
                 targetMonster = newTarget;
@@ -231,6 +304,9 @@ public class GamePanel extends JPanel {
     private void shootAtMonster(Monster monster) {
         targetMonster = monster;
         attackFrame = MAX_ATTACK_FRAMES;
+        isShootingAnimation = true; 
+        currentLaserFrame = 0; 
+        frameCounter = 0; 
     }
     
     @Override
@@ -257,19 +333,38 @@ public class GamePanel extends JPanel {
             int shooterY = (height - shooterSize) / 2; // Centered vertically
 
             double angle = 0;
+            int targetX = 0;
+            int targetY = 0;
+            int shooterCenterX = shooterX + shooterSize / 2;
+            int shooterCenterY = shooterY + shooterSize / 2;
+            double distance = 0;
+            
             if (targetMonster != null) {
-                int targetX = targetMonster.getX(width) + targetMonster.getSize() / 2;
-                int targetY = targetMonster.getY(height) + targetMonster.getSize() / 2;
-                int shooterCenterX = shooterX + shooterSize / 2;
-                int shooterCenterY = shooterY + shooterSize / 2;
-
+                targetX = targetMonster.getX(width) + targetMonster.getSize() / 2;
+                targetY = targetMonster.getY(height) + targetMonster.getSize() / 2;
+                
                 angle = Math.atan2(targetY - shooterCenterY, targetX - shooterCenterX);
+                distance = Math.sqrt(Math.pow(targetX - shooterCenterX, 2) + Math.pow(targetY - shooterCenterY, 2));
             }
 
             AffineTransform oldTransform = g2d.getTransform();
             g2d.translate(shooterX + shooterSize / 2, shooterY + shooterSize / 2);
             g2d.rotate(angle);
+            
+            // Draw the shooter
             g2d.drawImage(SHOOTER_IMAGE, -shooterSize / 2, -shooterSize / 2, shooterSize, shooterSize, null);
+            if (isShootingAnimation && currentLaserFrame < LASER_BEAM_FRAMES.length && LASER_BEAM_FRAMES[currentLaserFrame] != null) {
+                Image currentLaserImage = LASER_BEAM_FRAMES[currentLaserFrame];
+
+                int laserWidth = currentLaserImage.getWidth(this);
+                int laserHeight = currentLaserImage.getHeight(this);
+                
+                // Position the laser beam beside the shooter
+                int laserX = shooterSize / 2; // Right side of the shooter
+                int laserY = -laserHeight / 2; // Center vertically
+
+                g2d.drawImage(currentLaserImage, laserX, laserY, laserWidth, laserHeight, this);
+            }
 
             g2d.setTransform(oldTransform);
         }
