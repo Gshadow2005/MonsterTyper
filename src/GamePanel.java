@@ -24,12 +24,13 @@ public class GamePanel extends JPanel {
     private static final int SHAKE_DURATION = 20;
     private int shakeFrame = 0;
     private boolean shouldCenterShooter = false;
-    private long shooterCenterDelayMillis = 1000; // Default 1 second delay
+    private long shooterCenterDelayMillis = 1000; 
     private long shooterCenterTimeTarget = 0;
     
     // Explosion animation fields
-    private ImageIcon explosionGif;
+    private static final Image[] EXPLOSION_FRAMES;
     private HashMap<Monster, ExplosionAnimation> explosions = new HashMap<>();
+    private int explosionAnimationSpeed = 3; // Default explosion animation speed
     
     static {
         ImageIcon icon = null;
@@ -60,6 +61,24 @@ public class GamePanel extends JPanel {
                 LASER_BEAM_FRAMES[i] = null;
             }
         }
+        
+        // Load explosion frames
+        EXPLOSION_FRAMES = new Image[12];
+        for (int i = 0; i < 12; i++) {
+            try {
+                String path = "/assets/Explosion/Explosion" + (i + 1) + ".png";
+                ImageIcon explosionIcon = new ImageIcon(GamePanel.class.getResource(path));
+                if (explosionIcon.getIconWidth() <= 0) {
+                    System.out.println("Warning: Explosion frame " + (i + 1) + " loaded but has invalid dimensions");
+                    EXPLOSION_FRAMES[i] = null;
+                } else {
+                    EXPLOSION_FRAMES[i] = explosionIcon.getImage();
+                }
+            } catch (Exception e) {
+                System.out.println("Failed to load Explosion frame " + (i + 1) + ": " + e.getMessage());
+                EXPLOSION_FRAMES[i] = null;
+            }
+        }
     }
     
     public GamePanel(GameController gameController) {
@@ -87,24 +106,15 @@ public class GamePanel extends JPanel {
             System.out.println("No clouds image found or error loading it: " + e.getMessage());
         }
     
-        // Try to load explosion GIF
-        try {
-            explosionGif = new ImageIcon(GamePanel.class.getResource("/assets/explosion.gif"));
-            if (explosionGif.getIconWidth() <= 0) {
-                System.out.println("Warning: Explosion GIF loaded but has invalid dimensions");
-                explosionGif = null;
-            }
-        } catch (Exception e) {
-            System.out.println("Failed to load explosion GIF: " + e.getMessage());
-            explosionGif = null;
-        }
-        
         // Setup animation timer
         animationTimer = new Timer(16, e -> updateAnimations());
         animationTimer.start();
         
-        // Set initial laser size DIRI E EDIT
+        // Set initial laser size
         setLaserSize(100, 60);
+        
+        // Set initial explosion size
+        setExplosionSize(200, 200);
     }
     
     /**
@@ -129,6 +139,12 @@ public class GamePanel extends JPanel {
     public void setLaserAnimationSpeed(int speed) {
         if (speed < 1) speed = 1;
         this.laserAnimationSpeed = speed;
+    }
+
+    public void setExplosionAnimationSpeed(int speed) {
+        if (speed < 1) speed = 1;
+        this.explosionAnimationSpeed = speed;
+        System.out.println("Explosion animation speed set to: " + speed);
     }
 
     /**
@@ -157,20 +173,22 @@ public class GamePanel extends JPanel {
         }
         repaint();
     }
-
-    public void setExplosionGif(String filename) {
-        try {
-            ImageIcon icon = new ImageIcon(GamePanel.class.getResource("/assets/" + filename));
-            if (icon.getIconWidth() > 0) {
-                explosionGif = icon;
-                System.out.println("Successfully loaded explosion GIF: " + filename);
-            } else {
-                System.out.println("Warning: Explosion GIF loaded but has invalid dimensions");
+    
+    public void setExplosionSize(int width, int height) {
+        for (int i = 0; i < 12; i++) {
+            try {
+                String path = "/assets/Explosion/Explosion" + (i + 1) + ".png";
+                ImageIcon originalIcon = new ImageIcon(GamePanel.class.getResource(path));
+                if (originalIcon.getIconWidth() > 0) {
+                    Image originalImage = originalIcon.getImage();
+                    Image resizedImage = originalImage.getScaledInstance(width, height, Image.SCALE_SMOOTH);
+                    EXPLOSION_FRAMES[i] = resizedImage;
+                }
+            } catch (Exception e) {
+                System.out.println("Failed to resize Explosion frame " + (i + 1) + ": " + e.getMessage());
             }
-        } catch (Exception e) {
-            System.out.println("Failed to load explosion GIF: " + e.getMessage());
-            explosionGif = null;
         }
+        repaint();
     }
     
     public void clearBackgroundImage() {
@@ -286,11 +304,8 @@ public class GamePanel extends JPanel {
     }
     
     private void addExplosionAnimation(Monster monster) {
-        if (explosionGif != null) {
-            // Create explosion animation with monster reference
-            ExplosionAnimation explosion = new ExplosionAnimation(monster);
-            explosions.put(monster, explosion);
-        }
+        ExplosionAnimation explosion = new ExplosionAnimation(monster);
+        explosions.put(monster, explosion);
     }
     
     private Monster findTargetMonster() {
@@ -314,7 +329,7 @@ public class GamePanel extends JPanel {
         isShootingAnimation = true; 
         currentLaserFrame = 0; 
         frameCounter = 0; 
-        shouldCenterShooter = false; // Cancel any pending centering when shooting
+        shouldCenterShooter = false; 
     }
     
     @Override
@@ -391,8 +406,12 @@ public class GamePanel extends JPanel {
             }
         }
 
+        // Draw monsters with explosions
         for (Monster monster : explosions.keySet()) {
             if (monsters.contains(monster)) {  
+                AffineTransform monsterTransform = g2d.getTransform();
+                monster.draw(g, width, height);
+                g2d.setTransform(monsterTransform);
                 explosions.get(monster).draw(g2d, width, height);
             }
         }
@@ -416,43 +435,54 @@ public class GamePanel extends JPanel {
     }
     
     /**
-     * Inner class to handle the explosion animation
+     * Inner class to handle the frame-by-frame explosion animation
      */
     private class ExplosionAnimation {
         private Monster monster; // Store reference to the monster
-        private long startTime;
-        private int duration = 450; // Duration in milliseconds
+        private int currentFrame = 0;
+        private int frameCounter = 0;
         
         public ExplosionAnimation(Monster monster) {
             this.monster = monster;
-            this.startTime = System.currentTimeMillis();
         }
         
         public void update() {
-            // Nothing to update for GIF, it animates automatically
+            frameCounter++;
+            
+            if (frameCounter >= explosionAnimationSpeed) {
+                frameCounter = 0;
+                currentFrame++;
+            }
         }
         
         public boolean isFinished() {
-            return System.currentTimeMillis() - startTime > duration;
+            return currentFrame >= EXPLOSION_FRAMES.length;
         }
         
         public void draw(Graphics2D g, int panelWidth, int panelHeight) {
-            if (explosionGif != null && monster != null) {
+            if (currentFrame < EXPLOSION_FRAMES.length && EXPLOSION_FRAMES[currentFrame] != null && monster != null) {
                 // Get the monster's current position and size
                 int monsterX = monster.getX(panelWidth);
                 int monsterY = monster.getY(panelHeight);
                 int monsterSize = monster.getSize();
                 
-                // Get the GIF dimensions
-                int gifWidth = explosionGif.getIconWidth();
-                int gifHeight = explosionGif.getIconHeight();
+                // Get the explosion frame dimensions
+                Image currentExplosionImage = EXPLOSION_FRAMES[currentFrame];
+                int explosionWidth = currentExplosionImage.getWidth(null);
+                int explosionHeight = currentExplosionImage.getHeight(null);
+                
+                if (explosionWidth <= 0 || explosionHeight <= 0) {
+                    // Use estimated size if actual dimensions are not available
+                    explosionWidth = 120;
+                    explosionHeight = 120;
+                }
                 
                 // Calculate position to center the explosion over the monster
-                int drawX = monsterX - (gifWidth - monsterSize) / 2;
-                int drawY = monsterY - (gifHeight - monsterSize) / 2;
+                int drawX = monsterX + (monsterSize - explosionWidth) / 2;
+                int drawY = monsterY + (monsterSize - explosionHeight) / 2;
                 
-                // Draw the explosion GIF
-                explosionGif.paintIcon(GamePanel.this, g, drawX, drawY);
+                // Draw the explosion frame
+                g.drawImage(currentExplosionImage, drawX, drawY, null);
             }
         }
     }
