@@ -114,7 +114,7 @@ public class GamePanel extends JPanel {
         setLaserSize(100, 60);
         
         // Set initial explosion size
-        setExplosionSize(200, 200);
+        setExplosionSize(210, 210);
     }
     
     /**
@@ -255,9 +255,6 @@ public class GamePanel extends JPanel {
             explosion.update();
             
             if (explosion.isFinished()) {
-                Monster monster = entry.getKey();
-                // Remove monster from game when explosion finishes
-                gameController.removeMonster(monster);
                 it.remove();
             }
         }
@@ -295,18 +292,31 @@ public class GamePanel extends JPanel {
 
             gameController.increaseScore();
             
-            // Add explosion animation at monster's position
-            addExplosionAnimation(monster);
+            // Store monster position for explosion before removing it
+            int monsterX = monster.getX(getWidth());
+            int monsterY = monster.getY(getHeight());
+            int monsterSize = monster.getSize();
+            
+            // Add explosion animation and immediately remove monster
+            addExplosionAnimation(monster, monsterX, monsterY, monsterSize);
+            gameController.removeMonster(monster);
             
             // Clear the input field
             gameController.getInputField().setText("");
         }
     }
     
-    private void addExplosionAnimation(Monster monster) {
-        ExplosionAnimation explosion = new ExplosionAnimation(monster);
+    private void addExplosionAnimation(Monster monster, int x, int y, int size) {
+        ExplosionAnimation explosion = new ExplosionAnimation(x, y, size);
         explosions.put(monster, explosion);
     }
+    
+    //private void addExplosionAnimation(Monster monster) {
+        //int monsterX = monster.getX(getWidth());
+        //int monsterY = monster.getY(getHeight());
+        //int monsterSize = monster.getSize();
+        //addExplosionAnimation(monster, monsterX, monsterY, monsterSize);
+    //}
     
     private Monster findTargetMonster() {
         ArrayList<Monster> monsters = gameController.getMonsters();
@@ -406,14 +416,9 @@ public class GamePanel extends JPanel {
             }
         }
 
-        // Draw monsters with explosions
-        for (Monster monster : explosions.keySet()) {
-            if (monsters.contains(monster)) {  
-                AffineTransform monsterTransform = g2d.getTransform();
-                monster.draw(g, width, height);
-                g2d.setTransform(monsterTransform);
-                explosions.get(monster).draw(g2d, width, height);
-            }
+        // Draw explosions (monsters are already removed)
+        for (ExplosionAnimation explosion : explosions.values()) {
+            explosion.draw(g2d, width, height);
         }
 
         // Draw clouds above the monsters
@@ -438,12 +443,16 @@ public class GamePanel extends JPanel {
      * Inner class to handle the frame-by-frame explosion animation
      */
     private class ExplosionAnimation {
-        private Monster monster; // Store reference to the monster
+        private int positionX; // Fixed X position for the explosion
+        private int positionY; // Fixed Y position for the explosion
+        private int size;      // Size reference for centering
         private int currentFrame = 0;
         private int frameCounter = 0;
         
-        public ExplosionAnimation(Monster monster) {
-            this.monster = monster;
+        public ExplosionAnimation(int x, int y, int size) {
+            this.positionX = x;
+            this.positionY = y;
+            this.size = size;
         }
         
         public void update() {
@@ -460,12 +469,7 @@ public class GamePanel extends JPanel {
         }
         
         public void draw(Graphics2D g, int panelWidth, int panelHeight) {
-            if (currentFrame < EXPLOSION_FRAMES.length && EXPLOSION_FRAMES[currentFrame] != null && monster != null) {
-                // Get the monster's current position and size
-                int monsterX = monster.getX(panelWidth);
-                int monsterY = monster.getY(panelHeight);
-                int monsterSize = monster.getSize();
-                
+            if (currentFrame < EXPLOSION_FRAMES.length && EXPLOSION_FRAMES[currentFrame] != null) {
                 // Get the explosion frame dimensions
                 Image currentExplosionImage = EXPLOSION_FRAMES[currentFrame];
                 int explosionWidth = currentExplosionImage.getWidth(null);
@@ -477,9 +481,9 @@ public class GamePanel extends JPanel {
                     explosionHeight = 120;
                 }
                 
-                // Calculate position to center the explosion over the monster
-                int drawX = monsterX + (monsterSize - explosionWidth) / 2;
-                int drawY = monsterY + (monsterSize - explosionHeight) / 2;
+                // Calculate position to center the explosion
+                int drawX = positionX + (size - explosionWidth) / 2;
+                int drawY = positionY + (size - explosionHeight) / 2;
                 
                 // Draw the explosion frame
                 g.drawImage(currentExplosionImage, drawX, drawY, null);
