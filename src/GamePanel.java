@@ -14,10 +14,10 @@ public class GamePanel extends JPanel {
     // Sound effects
     private final String GUN_SOUND = "src/assets/Sounds/GunSound.wav";
     private final String CLICK_SOUND = "src/assets/Sounds/Click.wav";
-    private final String HURT_SOUND = "src/assets/Sounds/HurtSound.wav"; // Added hurt sound path
+    private final String HURT_SOUND = "src/assets/Sounds/HurtSound.wav"; 
     private ArrayList<Clip> gunSoundClips = new ArrayList<>();
     private ArrayList<Clip> clickSoundClips = new ArrayList<>();
-    private ArrayList<Clip> hurtSoundClips = new ArrayList<>(); // Added hurt sound clips array
+    private ArrayList<Clip> hurtSoundClips = new ArrayList<>(); 
     private static final int MAX_SIMULTANEOUS_SOUNDS = 3;
     
     // Laser beam animation properties
