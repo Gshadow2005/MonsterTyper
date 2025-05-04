@@ -198,7 +198,7 @@ public class Monster {
         double pixelsToMove = Constants.currentMonsterSpeed;
 
         if (isChildMonster) {
-            pixelsToMove *= 2.7; // monster speed small
+            pixelsToMove *= 2; // monster speed small
         }
         double moveAmount = pixelsToMove / Constants.WIDTH;
         relativeX -= moveAmount;
@@ -441,16 +441,16 @@ public class Monster {
             return new Monster[0];
         }
     
-        int childSize = (int)(size * 0.5); // 50%
+        int childSize = (int)(size * 0.3); 
         
-        int childCount = 7; // children count
+        int childCount =5; // children count ehen splitting
         Monster[] children = new Monster[childCount];
         
         for (int i = 0; i < childCount; i++) {
             double spreadFactor = 0.15; 
 
-            double angle = (2 * Math.PI * i) / childCount; 
-            double distance = spreadFactor * (0.7 + 0.3 * Constants.RANDOM.nextDouble()); 
+            double angle = (1 * Math.PI * i) / childCount; 
+            double distance = spreadFactor * (0.5 + 0.3 * Constants.RANDOM.nextDouble()); 
             
             double offsetX = relativeX + (distance * Math.cos(angle));
             double offsetY = relativeY + (distance * Math.sin(angle));
