@@ -198,8 +198,8 @@ public class GameController {
                 // Check if the monster is a boss (has multiple health points)
                 // and deduct lives accordingly
                 if (monster.getHealth() > 1) {
-                    // Boss monster - remove 5 lives
-                    decreaseLives(5);
+                    // Boss monster - remove 8 lives
+                    decreaseLives(8);
                 } else {
                     // Regular monster - remove 1 life
                     decreaseLives(1);
