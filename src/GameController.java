@@ -14,7 +14,7 @@ public class GameController {
     private JTextField inputField;
     private JLabel scoreLabel;
     private JLabel livesLabel;
-    private JPanel gamePanel;
+    private GamePanel gamePanel; 
     private Timer jamTimer;
     private PowerUpManager powerUpManager;
     
@@ -183,8 +183,7 @@ public class GameController {
         if (!gameRunning || gamePanel == null) return;
 
         int panelWidth = gamePanel.getWidth();
-        int thresholdX = (int) (panelWidth * 0.06); // 10% of the panel width
-
+        int thresholdX = (int) (panelWidth * 0.06); 
         ArrayList<Monster> monstersToRemove = new ArrayList<>();
 
         for (Monster monster : monsters) {
@@ -473,6 +472,10 @@ public class GameController {
     private void decreaseLives() {
         lives--;
         
+        if (gamePanel != null) {
+            gamePanel.playHurtSound(); 
+        }
+        
         if (livesLabel != null) {
             livesLabel.setText("Lives: " + lives);
             
@@ -628,11 +631,16 @@ public class GameController {
         return livesLabel;
     }
     
-    public void setGamePanel(JPanel gamePanel) { 
-        this.gamePanel = gamePanel;
-
-        if (powerUpManager != null) {
-            powerUpManager.setGamePanel(gamePanel);
+    public void setGamePanel(JPanel panel) {
+        if (panel instanceof GamePanel) {
+            this.gamePanel = (GamePanel) panel;
+            
+            if (powerUpManager != null) {
+                powerUpManager.setGamePanel(panel);
+            }
+        } else {
+            System.out.println("Warning: Expected GamePanel instance but received different panel type");
+            this.gamePanel = null;
         }
     }
     
