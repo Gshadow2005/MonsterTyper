@@ -153,6 +153,7 @@ public class Monster {
             this.canSplit = false;
             this.hasExtraLife = false;
             this.hasReverseInputPower = false;
+            this.size = (int)(Constants.MONSTER_SIZE * 1); 
         }
         // Reverse input power 
         else if (powerRoll < Constants.SPLIT_CHANCE + Constants.JAM_POWER_CHANCE + Constants.REVERSE_POWER_CHANCE) {
@@ -251,6 +252,10 @@ public class Monster {
             panelWidth / (double) Constants.WIDTH,
             panelHeight / (double) Constants.HEIGHT
         ));
+        
+        if (hasJamPower && !isChildMonster) {
+            scaledSize = (int)(scaledSize * 1.3);
+        }
 
         AffineTransform oldTransform = g2d.getTransform();
 
@@ -271,7 +276,13 @@ public class Monster {
         // Flip image horizontally
         g2d.translate(realX + scaledSize, realY);
         g2d.scale(-1, 1);
-        g2d.drawImage(imageToUse, 0, 0, scaledSize, scaledSize, null);
+
+        if (hasJamPower && !isChildMonster) {
+            int yOffset = 0; 
+            g2d.drawImage(imageToUse, 0, yOffset, scaledSize, scaledSize, null);
+        } else {
+            g2d.drawImage(imageToUse, 0, 0, scaledSize, scaledSize, null);
+        }
 
         // Restore the original transform
         g2d.setTransform(oldTransform);
