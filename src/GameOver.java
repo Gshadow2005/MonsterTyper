@@ -5,6 +5,8 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.net.URL;
+import javax.sound.sampled.*;
+import java.io.File;
 
 public class GameOver extends JPanel {
     private JButton playAgainButton;
@@ -15,6 +17,11 @@ public class GameOver extends JPanel {
     private static final Color BACKGROUND_COLOR = new Color(10, 10, 20);
     private static final Color BUTTON_COLOR = new Color(80, 80, 200);
     private static final Color BUTTON_HOVER_COLOR = new Color(139, 0, 0);
+    
+    // Sound-related fields
+    private final String GAME_OVER_SOUND = "src/assets/Sounds/GameOverSound.wav";
+    private Clip gameOverSoundClip;
+    private boolean isSoundPlaying = false;
 
     public GameOver(ActionListener playAgainAction, ActionListener exitAction, int score) {
         this.finalScore = score;
@@ -74,6 +81,67 @@ public class GameOver extends JPanel {
         
         // Center panel to main panel
         add(centerPanel, BorderLayout.CENTER);
+        
+        // Initialize and play the game over sound
+        initSounds();
+        playGameOverSound();
+    }
+    
+    /**
+     * Initialize sound effects
+     */
+    private void initSounds() {
+        try {
+            File gameOverSoundFile = new File(GAME_OVER_SOUND);
+            if (gameOverSoundFile.exists()) {
+                AudioInputStream audioStream = AudioSystem.getAudioInputStream(gameOverSoundFile);
+                gameOverSoundClip = AudioSystem.getClip();
+                gameOverSoundClip.open(audioStream);
+                
+                // Add a listener to detect when sound finishes playing
+                gameOverSoundClip.addLineListener(event -> {
+                    if (event.getType() == LineEvent.Type.STOP) {
+                        isSoundPlaying = false;
+                    }
+                });
+            } else {
+                System.out.println("Game over sound file not found: " + GAME_OVER_SOUND);
+            }
+        } catch (Exception e) {
+            System.out.println("Error initializing game over sound: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+    
+    /**
+     * Play the game over sound effect
+     */
+    public void playGameOverSound() {
+        if (gameOverSoundClip != null && !isSoundPlaying) {
+            gameOverSoundClip.setFramePosition(0);
+            gameOverSoundClip.start();
+            isSoundPlaying = true;
+        }
+    }
+    
+    /**
+     * Stop the game over sound if it's playing
+     */
+    public void stopGameOverSound() {
+        if (gameOverSoundClip != null && isSoundPlaying) {
+            gameOverSoundClip.stop();
+            isSoundPlaying = false;
+        }
+    }
+    
+    /**
+     * Cleanup resources before panel is disposed
+     */
+    public void cleanup() {
+        stopGameOverSound();
+        if (gameOverSoundClip != null) {
+            gameOverSoundClip.close();
+        }
     }
     
     private JButton createMenuButton(String text) {
