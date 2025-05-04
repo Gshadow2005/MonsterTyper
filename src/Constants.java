@@ -19,8 +19,8 @@ public class Constants {
     public static final double MONSTER_MAX_SPEED = 10;
     
     // Monster power chances (percentage)
-    public static final int SPLIT_CHANCE = 10;
-    public static final int JAM_POWER_CHANCE = 5;  
+    public static final int SPLIT_CHANCE = 2;
+    public static final int JAM_POWER_CHANCE = 100;  
     public static final int REVERSE_POWER_CHANCE = 5; 
     public static final int EXTRA_LIFE_CHANCE = 4;  
     
