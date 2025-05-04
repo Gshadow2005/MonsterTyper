@@ -18,6 +18,7 @@ public class Monster {
     private static final Image BOSS_MONSTER_IMAGE;
     private static final Image JAM_MONSTER_IMAGE;
     private static final Image LIFE_MONSTER_IMAGE;
+    private static final Image REVERSE_MONSTER_IMAGE;
     
     // List to store medium words
     private static final List<String> MEDIUM_WORDS = new ArrayList<>();
@@ -29,6 +30,7 @@ public class Monster {
         ImageIcon bossMonsterIcon = null;
         ImageIcon jamMonsterIcon = null;
         ImageIcon lifeMonsterIcon = null;
+        ImageIcon reverseMonsterIcon = null;
         try {
             // Using absolute path with leading slash
             monsterIcon = new ImageIcon(Monster.class.getResource("/assets/MonsterTyper_Zombie.gif"));
@@ -64,6 +66,13 @@ public class Monster {
                 System.out.println("Warning: Life monster image loaded but has invalid dimensions");
                 lifeMonsterIcon = null;
             }
+            
+            // Load the reverse monster image
+            reverseMonsterIcon = new ImageIcon(Monster.class.getResource("/assets/MonsterTyper_Reverse.gif"));
+            if (reverseMonsterIcon.getIconWidth() <= 0) {
+                System.out.println("Warning: Reverse monster image loaded but has invalid dimensions");
+                reverseMonsterIcon = null;
+            }
         } catch (Exception e) {
             System.out.println("Failed to load monster images: " + e.getMessage());
         }
@@ -72,6 +81,7 @@ public class Monster {
         BOSS_MONSTER_IMAGE = (bossMonsterIcon != null) ? bossMonsterIcon.getImage() : null;
         JAM_MONSTER_IMAGE = (jamMonsterIcon != null) ? jamMonsterIcon.getImage() : null;
         LIFE_MONSTER_IMAGE = (lifeMonsterIcon != null) ? lifeMonsterIcon.getImage() : null;
+        REVERSE_MONSTER_IMAGE = (reverseMonsterIcon != null) ? reverseMonsterIcon.getImage() : null;
 
         if (MONSTER_IMAGE == null) {
             System.out.println("Warning: MONSTER_IMAGE is null. Monster won't be drawn.");
@@ -91,6 +101,10 @@ public class Monster {
         
         if (LIFE_MONSTER_IMAGE == null) {
             System.out.println("Warning: LIFE_MONSTER_IMAGE is null. Life monsters will use placeholder.");
+        }
+        
+        if (REVERSE_MONSTER_IMAGE == null) {
+            System.out.println("Warning: REVERSE_MONSTER_IMAGE is null. Reverse monsters will use placeholder.");
         }
         
         // Load medium words
@@ -175,6 +189,7 @@ public class Monster {
             this.hasJamPower = false;
             this.canSplit = false;
             this.hasExtraLife = false;
+            this.size = (int)(Constants.MONSTER_SIZE * 1.3); 
         }
         // Extra life
         else if (powerRoll < Constants.SPLIT_CHANCE + Constants.JAM_POWER_CHANCE + Constants.REVERSE_POWER_CHANCE + Constants.EXTRA_LIFE_CHANCE) {
@@ -230,9 +245,11 @@ public class Monster {
         if (isChildMonster) {
             pixelsToMove *= 2; // Child monsters move faster
         } else if (hasJamPower) {
-            pixelsToMove *= 1.8; // Jam monsters move faster
+            pixelsToMove *= 1.9; // Jam monsters move faster
+        } else if (hasReverseInputPower) {
+            pixelsToMove *= 1.5; // Reverse monsters speed
         } else if (hasExtraLife) {
-            pixelsToMove *= 1; // Life monsters
+            pixelsToMove *= 1; // Life monsters normal speed
         }
         
         double moveAmount = pixelsToMove / Constants.WIDTH;
@@ -254,6 +271,8 @@ public class Monster {
             imageToUse = JAM_MONSTER_IMAGE;
         } else if (hasExtraLife) {
             imageToUse = LIFE_MONSTER_IMAGE;
+        } else if (hasReverseInputPower) {
+            imageToUse = REVERSE_MONSTER_IMAGE;
         } else {
             imageToUse = MONSTER_IMAGE;
         }
@@ -276,6 +295,8 @@ public class Monster {
             scaledSize = (int)(scaledSize * 1.3);
         } else if (hasExtraLife && !isChildMonster) {
             scaledSize = (int)(scaledSize * 1.2); 
+        } else if (hasReverseInputPower && !isChildMonster) {
+            scaledSize = (int)(scaledSize * 1.2);
         }
 
         AffineTransform oldTransform = g2d.getTransform();
@@ -295,6 +316,9 @@ public class Monster {
             int yOffset = 0; 
             g2d.drawImage(imageToUse, 0, yOffset, scaledSize, scaledSize, null);
         } else if (hasExtraLife && !isChildMonster) {
+            int yOffset = 0;
+            g2d.drawImage(imageToUse, 0, yOffset, scaledSize, scaledSize, null);
+        } else if (hasReverseInputPower && !isChildMonster) {
             int yOffset = 0;
             g2d.drawImage(imageToUse, 0, yOffset, scaledSize, scaledSize, null);
         } else {
@@ -365,6 +389,8 @@ public class Monster {
             g.setColor(new Color(255, 0, 255)); // Purple for jam monsters
         } else if (hasExtraLife) {
             g.setColor(new Color(0, 220, 0)); // Green for life monsters
+        } else if (hasReverseInputPower) {
+            g.setColor(new Color(30, 144, 255)); // Blue for reverse monsters
         } else {
             g.setColor(Color.GREEN);
         }

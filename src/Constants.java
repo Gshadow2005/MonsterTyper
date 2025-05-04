@@ -22,7 +22,7 @@ public class Constants {
     public static final double SPLIT_CHANCE = 0.8;
     public static final int JAM_POWER_CHANCE = 5;  
     public static final int REVERSE_POWER_CHANCE = 5; 
-    public static final int EXTRA_LIFE_CHANCE = 5;  
+    public static final int EXTRA_LIFE_CHANCE = 6;  
     
     // Power duration
     public static final long JAM_DURATION = 3000;    
