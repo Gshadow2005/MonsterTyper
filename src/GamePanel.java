@@ -13,9 +13,11 @@ public class GamePanel extends JPanel {
     
     // Sound effects
     private final String GUN_SOUND = "src/assets/Sounds/GunSound.wav";
-    private final String CLICK_SOUND = "src/assets/Sounds/Click.wav"; 
+    private final String CLICK_SOUND = "src/assets/Sounds/Click.wav";
+    private final String HURT_SOUND = "src/assets/Sounds/HurtSound.wav"; // Added hurt sound path
     private ArrayList<Clip> gunSoundClips = new ArrayList<>();
-    private ArrayList<Clip> clickSoundClips = new ArrayList<>(); 
+    private ArrayList<Clip> clickSoundClips = new ArrayList<>();
+    private ArrayList<Clip> hurtSoundClips = new ArrayList<>(); // Added hurt sound clips array
     private static final int MAX_SIMULTANEOUS_SOUNDS = 3;
     
     // Laser beam animation properties
@@ -173,6 +175,15 @@ public class GamePanel extends JPanel {
                 clip.open(clickAudioStream);
                 clickSoundClips.add(clip);
             }
+            
+            // Pre-load multiple hurt sound clips for simultaneous playback
+            for (int i = 0; i < MAX_SIMULTANEOUS_SOUNDS; i++) {
+                File hurtSoundFile = new File(HURT_SOUND);
+                AudioInputStream hurtAudioStream = AudioSystem.getAudioInputStream(hurtSoundFile);
+                Clip clip = AudioSystem.getClip();
+                clip.open(hurtAudioStream);
+                hurtSoundClips.add(clip);
+            }
         } catch (Exception e) {
             System.out.println("Error initializing sound clips: " + e.getMessage());
         }
@@ -219,6 +230,29 @@ public class GamePanel extends JPanel {
         }
 
         Clip firstClip = clickSoundClips.get(0);
+        firstClip.stop();
+        firstClip.setFramePosition(0);
+        firstClip.start();
+    }
+    
+    /**
+     * Play the hurt sound effect when player loses a life
+     * Uses a pool of sound clips to allow multiple sounds to play simultaneously
+     */
+    public void playHurtSound() {
+        if (hurtSoundClips.isEmpty()) {
+            return;
+        }
+
+        for (Clip clip : hurtSoundClips) {
+            if (!clip.isRunning()) {
+                clip.setFramePosition(0);
+                clip.start();
+                return;
+            }
+        }
+
+        Clip firstClip = hurtSoundClips.get(0);
         firstClip.stop();
         firstClip.setFramePosition(0);
         firstClip.start();
@@ -559,6 +593,14 @@ public class GamePanel extends JPanel {
             }
         }
         clickSoundClips.clear();
+        
+        // Add cleanup for hurt sound clips
+        for (Clip clip : hurtSoundClips) {
+            if (clip != null) {
+                clip.close();
+            }
+        }
+        hurtSoundClips.clear();
     }
     
     /**

@@ -14,7 +14,7 @@ public class GameController {
     private JTextField inputField;
     private JLabel scoreLabel;
     private JLabel livesLabel;
-    private JPanel gamePanel;
+    private GamePanel gamePanel; // Changed to GamePanel type for direct method access
     private Timer jamTimer;
     private PowerUpManager powerUpManager;
     
@@ -183,7 +183,7 @@ public class GameController {
         if (!gameRunning || gamePanel == null) return;
 
         int panelWidth = gamePanel.getWidth();
-        int thresholdX = (int) (panelWidth * 0.06); // 10% of the panel width
+        int thresholdX = (int) (panelWidth * 0.06); // 6% of the panel width
 
         ArrayList<Monster> monstersToRemove = new ArrayList<>();
 
@@ -473,6 +473,11 @@ public class GameController {
     private void decreaseLives() {
         lives--;
         
+        // Play hurt sound if GamePanel is available
+        if (gamePanel != null) {
+            gamePanel.playHurtSound(); // This is the key change - call playHurtSound()
+        }
+        
         if (livesLabel != null) {
             livesLabel.setText("Lives: " + lives);
             
@@ -628,11 +633,17 @@ public class GameController {
         return livesLabel;
     }
     
-    public void setGamePanel(JPanel gamePanel) { 
-        this.gamePanel = gamePanel;
-
-        if (powerUpManager != null) {
-            powerUpManager.setGamePanel(gamePanel);
+    // Modified to store as GamePanel type
+    public void setGamePanel(JPanel panel) {
+        if (panel instanceof GamePanel) {
+            this.gamePanel = (GamePanel) panel;
+            
+            if (powerUpManager != null) {
+                powerUpManager.setGamePanel(panel);
+            }
+        } else {
+            System.out.println("Warning: Expected GamePanel instance but received different panel type");
+            this.gamePanel = null;
         }
     }
     
