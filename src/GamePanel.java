@@ -4,10 +4,17 @@ import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import javax.sound.sampled.*;
+import java.io.File;
 
 public class GamePanel extends JPanel {
     private GameController gameController;
     private static final Image SHOOTER_IMAGE;
+    
+    // Sound effects
+    private final String GUN_SOUND = "src/assets/Sounds/GunSound.wav";
+    private ArrayList<Clip> gunSoundClips = new ArrayList<>();
+    private static final int MAX_SIMULTANEOUS_SOUNDS = 3;
     
     // Laser beam animation properties
     private static final Image[] LASER_BEAM_FRAMES; 
@@ -86,6 +93,9 @@ public class GamePanel extends JPanel {
         setBackground(Color.BLACK);
         gameController.setGamePanel(this);
         
+        // Initialize sound effects
+        initSounds();
+        
         // Try to load default background image
         try {
             ImageIcon bgIcon = new ImageIcon(GamePanel.class.getResource("/assets/BGniKoKoAndMarie_2.png"));
@@ -115,6 +125,47 @@ public class GamePanel extends JPanel {
         
         // Set initial explosion size
         setExplosionSize(210, 210);
+    }
+    
+    /**
+     * Initialize sound effects
+     */
+    private void initSounds() {
+        try {
+            // Pre-load multiple gun sound clips for simultaneous playback
+            for (int i = 0; i < MAX_SIMULTANEOUS_SOUNDS; i++) {
+                File gunSoundFile = new File(GUN_SOUND);
+                AudioInputStream gunAudioStream = AudioSystem.getAudioInputStream(gunSoundFile);
+                Clip clip = AudioSystem.getClip();
+                clip.open(gunAudioStream);
+                gunSoundClips.add(clip);
+            }
+        } catch (Exception e) {
+            System.out.println("Error initializing gun sound clips: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Play the gun sound effect
+     * Uses a pool of sound clips to allow multiple sounds to play simultaneously
+     */
+    private void playGunSound() {
+        if (gunSoundClips.isEmpty()) {
+            return;
+        }
+
+        for (Clip clip : gunSoundClips) {
+            if (!clip.isRunning()) {
+                clip.setFramePosition(0);
+                clip.start();
+                return;
+            }
+        }
+
+        Clip firstClip = gunSoundClips.get(0);
+        firstClip.stop();
+        firstClip.setFramePosition(0);
+        firstClip.start();
     }
     
     /**
@@ -311,19 +362,16 @@ public class GamePanel extends JPanel {
         explosions.put(monster, explosion);
     }
     
-    //private void addExplosionAnimation(Monster monster) {
-        //int monsterX = monster.getX(getWidth());
-        //int monsterY = monster.getY(getHeight());
-        //int monsterSize = monster.getSize();
-        //addExplosionAnimation(monster, monsterX, monsterY, monsterSize);
-    //}
-    
     private Monster findTargetMonster() {
         ArrayList<Monster> monsters = gameController.getMonsters();
         if (monsters.isEmpty()) return null;
         
         String currentInput = gameController.getInputField().getText().trim().toLowerCase();
         if (currentInput.isEmpty()) return null;
+        
+        if (isShootingAnimation || attackFrame > 0) {
+            return null;
+        }
         
         for (Monster monster : monsters) {
             if (monster.getWord().toLowerCase().equals(currentInput)) {
@@ -340,6 +388,8 @@ public class GamePanel extends JPanel {
         currentLaserFrame = 0; 
         frameCounter = 0; 
         shouldCenterShooter = false; 
+        
+        playGunSound();
     }
     
     @Override
@@ -433,10 +483,19 @@ public class GamePanel extends JPanel {
     }
     
     public void attackMonster(Monster monster) {
-        if (monster != null) {
+        if (monster != null && monster != targetMonster) {
             targetMonster = monster;
             shootAtMonster(monster);
         }
+    }
+    
+    public void cleanup() {
+        for (Clip clip : gunSoundClips) {
+            if (clip != null) {
+                clip.close();
+            }
+        }
+        gunSoundClips.clear();
     }
     
     /**
