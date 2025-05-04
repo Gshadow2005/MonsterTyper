@@ -195,7 +195,15 @@ public class GameController {
             // Check if monster reached the base
             if (monster.getX(panelWidth) <= thresholdX) {
                 monstersToRemove.add(monster);
-                decreaseLives();
+                // Check if the monster is a boss (has multiple health points)
+                // and deduct lives accordingly
+                if (monster.getHealth() > 1) {
+                    // Boss monster - remove 5 lives
+                    decreaseLives(5);
+                } else {
+                    // Regular monster - remove 1 life
+                    decreaseLives(1);
+                }
                 // Reset perfect streak when a monster reaches the base
                 powerUpManager.resetStreak();
             }
@@ -469,8 +477,9 @@ public class GameController {
         }
     }
     
-    private void decreaseLives() {
-        lives--;
+    // Modified to take the number of lives to decrease
+    private void decreaseLives(int amount) {
+        lives -= amount;
         
         if (gamePanel != null) {
             gamePanel.playHurtSound(); 
