@@ -13,7 +13,9 @@ public class GamePanel extends JPanel {
     
     // Sound effects
     private final String GUN_SOUND = "src/assets/Sounds/GunSound.wav";
+    private final String CLICK_SOUND = "src/assets/Sounds/Click.wav"; 
     private ArrayList<Clip> gunSoundClips = new ArrayList<>();
+    private ArrayList<Clip> clickSoundClips = new ArrayList<>(); 
     private static final int MAX_SIMULTANEOUS_SOUNDS = 3;
     
     // Laser beam animation properties
@@ -125,6 +127,28 @@ public class GamePanel extends JPanel {
         
         // Set initial explosion size
         setExplosionSize(210, 210);
+        
+        // Add key listener to input field to handle empty backspace
+        setupInputFieldListener();
+    }
+    
+    /**
+     * Setup listener for the input field to detect backspace on empty field
+     */
+    private void setupInputFieldListener() {
+        JTextField inputField = gameController.getInputField();
+        if (inputField != null) {
+            inputField.addKeyListener(new java.awt.event.KeyAdapter() {
+                @Override
+                public void keyPressed(java.awt.event.KeyEvent evt) {
+                    if (evt.getKeyCode() == java.awt.event.KeyEvent.VK_BACK_SPACE 
+                            && inputField.getText().isEmpty()) {
+                        playClickSound();
+                        evt.consume(); 
+                    }
+                }
+            });
+        }
     }
     
     /**
@@ -140,8 +164,17 @@ public class GamePanel extends JPanel {
                 clip.open(gunAudioStream);
                 gunSoundClips.add(clip);
             }
+            
+            // Pre-load multiple click sound clips for simultaneous playback
+            for (int i = 0; i < MAX_SIMULTANEOUS_SOUNDS; i++) {
+                File clickSoundFile = new File(CLICK_SOUND);
+                AudioInputStream clickAudioStream = AudioSystem.getAudioInputStream(clickSoundFile);
+                Clip clip = AudioSystem.getClip();
+                clip.open(clickAudioStream);
+                clickSoundClips.add(clip);
+            }
         } catch (Exception e) {
-            System.out.println("Error initializing gun sound clips: " + e.getMessage());
+            System.out.println("Error initializing sound clips: " + e.getMessage());
         }
     }
     
@@ -163,6 +196,29 @@ public class GamePanel extends JPanel {
         }
 
         Clip firstClip = gunSoundClips.get(0);
+        firstClip.stop();
+        firstClip.setFramePosition(0);
+        firstClip.start();
+    }
+    
+    /**
+     * Play the click sound effect
+     * Uses a pool of sound clips to allow multiple sounds to play simultaneously
+     */
+    private void playClickSound() {
+        if (clickSoundClips.isEmpty()) {
+            return;
+        }
+
+        for (Clip clip : clickSoundClips) {
+            if (!clip.isRunning()) {
+                clip.setFramePosition(0);
+                clip.start();
+                return;
+            }
+        }
+
+        Clip firstClip = clickSoundClips.get(0);
         firstClip.stop();
         firstClip.setFramePosition(0);
         firstClip.start();
@@ -496,6 +552,13 @@ public class GamePanel extends JPanel {
             }
         }
         gunSoundClips.clear();
+
+        for (Clip clip : clickSoundClips) {
+            if (clip != null) {
+                clip.close();
+            }
+        }
+        clickSoundClips.clear();
     }
     
     /**
