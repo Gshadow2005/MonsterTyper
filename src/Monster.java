@@ -16,6 +16,7 @@ public class Monster {
     private static final Image MONSTER_IMAGE;
     private static final Image CHILD_MONSTER_IMAGE;
     private static final Image BOSS_MONSTER_IMAGE;
+    private static final Image JAM_MONSTER_IMAGE;
     
     // List to store medium words
     private static final List<String> MEDIUM_WORDS = new ArrayList<>();
@@ -25,6 +26,7 @@ public class Monster {
         ImageIcon monsterIcon = null;
         ImageIcon childMonsterIcon = null;
         ImageIcon bossMonsterIcon = null;
+        ImageIcon jamMonsterIcon = null;
         try {
             // Using absolute path with leading slash
             monsterIcon = new ImageIcon(Monster.class.getResource("/assets/MonsterTyper_Zombie.gif"));
@@ -46,12 +48,20 @@ public class Monster {
                 System.out.println("Warning: Boss monster image loaded but has invalid dimensions");
                 bossMonsterIcon = null;
             }
+            
+            // Load the jam monster image
+            jamMonsterIcon = new ImageIcon(Monster.class.getResource("/assets/MonsterTyper_JamMonster.gif"));
+            if (jamMonsterIcon.getIconWidth() <= 0) {
+                System.out.println("Warning: Jam monster image loaded but has invalid dimensions");
+                jamMonsterIcon = null;
+            }
         } catch (Exception e) {
             System.out.println("Failed to load monster images: " + e.getMessage());
         }
         MONSTER_IMAGE = (monsterIcon != null) ? monsterIcon.getImage() : null;
         CHILD_MONSTER_IMAGE = (childMonsterIcon != null) ? childMonsterIcon.getImage() : null;
         BOSS_MONSTER_IMAGE = (bossMonsterIcon != null) ? bossMonsterIcon.getImage() : null;
+        JAM_MONSTER_IMAGE = (jamMonsterIcon != null) ? jamMonsterIcon.getImage() : null;
 
         if (MONSTER_IMAGE == null) {
             System.out.println("Warning: MONSTER_IMAGE is null. Monster won't be drawn.");
@@ -63,6 +73,10 @@ public class Monster {
         
         if (BOSS_MONSTER_IMAGE == null) {
             System.out.println("Warning: BOSS_MONSTER_IMAGE is null. Boss monsters will use placeholder.");
+        }
+        
+        if (JAM_MONSTER_IMAGE == null) {
+            System.out.println("Warning: JAM_MONSTER_IMAGE is null. Jam monsters will use placeholder.");
         }
         
         // Load medium words
@@ -139,6 +153,7 @@ public class Monster {
             this.canSplit = false;
             this.hasExtraLife = false;
             this.hasReverseInputPower = false;
+            this.size = (int)(Constants.MONSTER_SIZE * 1); 
         }
         // Reverse input power 
         else if (powerRoll < Constants.SPLIT_CHANCE + Constants.JAM_POWER_CHANCE + Constants.REVERSE_POWER_CHANCE) {
@@ -198,8 +213,11 @@ public class Monster {
         double pixelsToMove = Constants.currentMonsterSpeed;
 
         if (isChildMonster) {
-            pixelsToMove *= 2; // monster speed small
+            pixelsToMove *= 2; // Child monsters 
+        } else if (hasJamPower) {
+            pixelsToMove *= 1.8; // Jam monsters move 
         }
+        
         double moveAmount = pixelsToMove / Constants.WIDTH;
         relativeX -= moveAmount;
         
@@ -215,6 +233,8 @@ public class Monster {
             imageToUse = CHILD_MONSTER_IMAGE;
         } else if (canSplit) {
             imageToUse = BOSS_MONSTER_IMAGE;
+        } else if (hasJamPower) {
+            imageToUse = JAM_MONSTER_IMAGE;
         } else {
             imageToUse = MONSTER_IMAGE;
         }
@@ -232,6 +252,10 @@ public class Monster {
             panelWidth / (double) Constants.WIDTH,
             panelHeight / (double) Constants.HEIGHT
         ));
+        
+        if (hasJamPower && !isChildMonster) {
+            scaledSize = (int)(scaledSize * 1.3);
+        }
 
         AffineTransform oldTransform = g2d.getTransform();
 
@@ -252,7 +276,13 @@ public class Monster {
         // Flip image horizontally
         g2d.translate(realX + scaledSize, realY);
         g2d.scale(-1, 1);
-        g2d.drawImage(imageToUse, 0, 0, scaledSize, scaledSize, null);
+
+        if (hasJamPower && !isChildMonster) {
+            int yOffset = 0; 
+            g2d.drawImage(imageToUse, 0, yOffset, scaledSize, scaledSize, null);
+        } else {
+            g2d.drawImage(imageToUse, 0, 0, scaledSize, scaledSize, null);
+        }
 
         // Restore the original transform
         g2d.setTransform(oldTransform);
@@ -314,6 +344,8 @@ public class Monster {
             g.setColor(new Color(100, 180, 100)); // Lighter green for children
         } else if (canSplit) {
             g.setColor(new Color(200, 130, 30)); // Orange for boss monsters
+        } else if (hasJamPower) {
+            g.setColor(new Color(255, 0, 255)); // Purple for jam monsters
         } else {
             g.setColor(Color.GREEN);
         }
