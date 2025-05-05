@@ -141,6 +141,10 @@ public class GameController {
             inputField.setText("");
         }
 
+        if (gamePanel != null) {
+            gamePanel.startBackgroundMusic();
+        }
+
         spawnMonster();
     }
     
@@ -513,6 +517,10 @@ public class GameController {
             gameTimer.stop();
         }
         
+        if (gamePanel != null) {
+            gamePanel.stopBackgroundMusic();
+        }
+        
         JDialog gameOverDialog = new JDialog();
         gameOverDialog.setTitle("Game Over");
         gameOverDialog.setModal(true);
@@ -594,6 +602,8 @@ public class GameController {
 
         if (gamePanel != null) {
             powerUpManager.setGamePanel(gamePanel);
+
+            gamePanel.startBackgroundMusic();
         }
     }
 

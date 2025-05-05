@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import javax.sound.sampled.*;
 import java.io.File;
+import java.io.IOException;
 
 public class GamePanel extends JPanel {
     private GameController gameController;
@@ -15,9 +16,11 @@ public class GamePanel extends JPanel {
     private final String GUN_SOUND = "src/assets/Sounds/GunSound.wav";
     private final String CLICK_SOUND = "src/assets/Sounds/Click.wav";
     private final String HURT_SOUND = "src/assets/Sounds/HurtSound.wav"; 
+    private final String BACKGROUND_MUSIC = "src/assets/Sounds/Backround.wav";
     private ArrayList<Clip> gunSoundClips = new ArrayList<>();
     private ArrayList<Clip> clickSoundClips = new ArrayList<>();
     private ArrayList<Clip> hurtSoundClips = new ArrayList<>(); 
+    private Clip backgroundMusicClip;
     private static final int MAX_SIMULTANEOUS_SOUNDS = 3;
     
     // Laser beam animation properties
@@ -184,8 +187,56 @@ public class GamePanel extends JPanel {
                 clip.open(hurtAudioStream);
                 hurtSoundClips.add(clip);
             }
+            
+            // Initialize background music clip
+            initBackgroundMusic();
+            
         } catch (Exception e) {
             System.out.println("Error initializing sound clips: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Initialize the background music clip
+     */
+    private void initBackgroundMusic() {
+        try {
+            File bgMusicFile = new File(BACKGROUND_MUSIC);
+            AudioInputStream bgMusicStream = AudioSystem.getAudioInputStream(bgMusicFile);
+            backgroundMusicClip = AudioSystem.getClip();
+            backgroundMusicClip.open(bgMusicStream);
+            
+            // Add a listener to loop the background music when it reaches the end
+            backgroundMusicClip.addLineListener(event -> {
+                if (event.getType() == LineEvent.Type.STOP && gameController.isGameRunning()) {
+                    // Only restart if not manually stopped (when game is running)
+                    backgroundMusicClip.setFramePosition(0);
+                    backgroundMusicClip.start();
+                }
+            });
+            
+        } catch (UnsupportedAudioFileException | IOException | LineUnavailableException e) {
+            System.out.println("Error initializing background music: " + e.getMessage());
+            backgroundMusicClip = null;
+        }
+    }
+    
+    /**
+     * Start playing background music
+     */
+    public void startBackgroundMusic() {
+        if (backgroundMusicClip != null) {
+            backgroundMusicClip.setFramePosition(0);
+            backgroundMusicClip.start();
+        }
+    }
+    
+    /**
+     * Stop playing background music
+     */
+    public void stopBackgroundMusic() {
+        if (backgroundMusicClip != null && backgroundMusicClip.isRunning()) {
+            backgroundMusicClip.stop();
         }
     }
     
@@ -580,6 +631,14 @@ public class GamePanel extends JPanel {
     }
     
     public void cleanup() {
+        // Stop the background music
+        stopBackgroundMusic();
+        
+        // Close the background music clip
+        if (backgroundMusicClip != null) {
+            backgroundMusicClip.close();
+        }
+        
         for (Clip clip : gunSoundClips) {
             if (clip != null) {
                 clip.close();

@@ -6,11 +6,14 @@ import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.net.URL;
+import javax.sound.sampled.*;
 
 public class MainMenu extends JPanel {
     private JButton playButton;
     private JButton exitButton;
     private ImageIcon logoGif;
+    private Clip backgroundMusic;
+    private boolean musicInitialized = false;
 
     private static final Color BACKGROUND_COLOR = new Color(10, 10, 20);
     private static final Color BUTTON_COLOR = new Color(80, 80, 200);
@@ -19,6 +22,9 @@ public class MainMenu extends JPanel {
     public MainMenu(ActionListener playAction) {
         setLayout(new BorderLayout());
         setBackground(BACKGROUND_COLOR); 
+
+        // Initialize the music but don't play it yet
+        initializeBackgroundMusic();
 
         JPanel centerPanel = new JPanel();
         centerPanel.setLayout(new BoxLayout(centerPanel, BoxLayout.Y_AXIS));
@@ -47,7 +53,10 @@ public class MainMenu extends JPanel {
         playButton.addActionListener(playAction);
         
         exitButton = createMenuButton("Exit");
-        exitButton.addActionListener(e -> System.exit(0));
+        exitButton.addActionListener(e -> {
+            stopBackgroundMusic();
+            System.exit(0);
+        });
         
         // Buttons to panel
         buttonPanel.add(playButton);
@@ -64,6 +73,65 @@ public class MainMenu extends JPanel {
         
         // Center panel to main panel
         add(centerPanel, BorderLayout.CENTER);
+        addAncestorListener(new javax.swing.event.AncestorListener() {
+            @Override
+            public void ancestorAdded(javax.swing.event.AncestorEvent event) {
+                playBackgroundMusic();
+            }
+
+            @Override
+            public void ancestorRemoved(javax.swing.event.AncestorEvent event) {
+                stopBackgroundMusic();
+            }
+
+            @Override
+            public void ancestorMoved(javax.swing.event.AncestorEvent event) {
+            }
+        });
+    }
+
+    private void initializeBackgroundMusic() {
+        try {
+            URL audioUrl = getClass().getResource("/assets/Sounds/MainMenu.wav");
+            AudioInputStream audioStream;
+            
+            if (audioUrl != null) {
+                audioStream = AudioSystem.getAudioInputStream(audioUrl);
+            } else {
+                File audioFile = new File("src/assets/Sounds/MainMenu.wav");
+                if (!audioFile.exists()) {
+                    System.out.println("MainMenu.wav not found at: " + audioFile.getAbsolutePath());
+                    return;
+                }
+                audioStream = AudioSystem.getAudioInputStream(audioFile);
+            }
+            
+            backgroundMusic = AudioSystem.getClip();
+            backgroundMusic.open(audioStream);
+            musicInitialized = true;
+            
+        } catch (Exception e) {
+            System.out.println("Error initializing background music: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public void playBackgroundMusic() {
+        if (!musicInitialized) {
+            initializeBackgroundMusic();
+        }
+        
+        if (backgroundMusic != null && !backgroundMusic.isRunning()) {
+            backgroundMusic.setFramePosition(0); // Reset to beginning
+            backgroundMusic.loop(Clip.LOOP_CONTINUOUSLY);
+            backgroundMusic.start();
+        }
+    }
+
+    public void stopBackgroundMusic() {
+        if (backgroundMusic != null && backgroundMusic.isRunning()) {
+            backgroundMusic.stop();
+        }
     }
     
     private JButton createMenuButton(String text) {
