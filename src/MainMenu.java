@@ -18,6 +18,7 @@ public class MainMenu extends JPanel {
     private static final Color BACKGROUND_COLOR = new Color(10, 10, 20);
     private static final Color BUTTON_COLOR = new Color(80, 80, 200);
     private static final Color BUTTON_HOVER_COLOR = new Color(139, 0, 0);
+    private static final Color BUTTON_PRESS_COLOR = new Color(200, 0, 0);
     
     public MainMenu(ActionListener playAction) {
         setLayout(new BorderLayout());
@@ -48,14 +49,18 @@ public class MainMenu extends JPanel {
         buttonPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
         buttonPanel.setMaximumSize(new Dimension(150, 100));
         
-        // Create buttons
+        // Create buttons with click transition
         playButton = createMenuButton("Play Game");
-        playButton.addActionListener(playAction);
+        playButton.addActionListener(e -> {
+            performButtonClickTransition(playButton, playAction);
+        });
         
         exitButton = createMenuButton("Exit");
         exitButton.addActionListener(e -> {
-            stopBackgroundMusic();
-            System.exit(0);
+            performButtonClickTransition(exitButton, evt -> {
+                stopBackgroundMusic();
+                System.exit(0);
+            });
         });
         
         // Buttons to panel
@@ -88,6 +93,69 @@ public class MainMenu extends JPanel {
             public void ancestorMoved(javax.swing.event.AncestorEvent event) {
             }
         });
+    }
+
+    private void performButtonClickTransition(JButton button, ActionListener action) {
+        Color originalColor = button.getBackground();
+        Font originalFont = button.getFont();
+        int originalFontSize = originalFont.getSize();
+        
+        button.setBackground(BUTTON_PRESS_COLOR);
+        button.setFont(new Font(originalFont.getName(), originalFont.getStyle(), originalFontSize - 1));
+        
+        // Play click sound
+        playClickSound();
+        
+        Timer transitionTimer = new Timer(150, e -> {
+            Timer fadeTimer = new Timer(15, null);
+            final int[] step = {0};
+            final int totalSteps = 10;
+            
+            fadeTimer.addActionListener(evt -> {
+                step[0]++;
+                float ratio = (float) step[0] / totalSteps;
+                
+                if (step[0] >= totalSteps) {
+                    fadeTimer.stop();
+                    button.setFont(new Font(originalFont.getName(), originalFont.getStyle(), originalFontSize));
+                    button.setBackground(originalColor);
+                    action.actionPerformed(null);
+                } else {
+                    button.setBackground(interpolateColor(BUTTON_PRESS_COLOR, originalColor, ratio));
+                    int newSize = Math.max(originalFontSize - 1, 
+                                  originalFontSize - 1 + (int)(ratio * 1));
+                    button.setFont(new Font(originalFont.getName(), originalFont.getStyle(), newSize));
+                }
+            });
+            
+            fadeTimer.start();
+        });
+        
+        transitionTimer.setRepeats(false);
+        transitionTimer.start();
+    }
+    
+    private void playClickSound() {
+        try {
+            URL soundUrl = getClass().getResource("/assets/Sounds/click.wav");
+            AudioInputStream audioStream;
+            
+            if (soundUrl != null) {
+                audioStream = AudioSystem.getAudioInputStream(soundUrl);
+            } else {
+                File soundFile = new File("src/assets/Sounds/click.wav");
+                if (!soundFile.exists()) {
+                    return;
+                }
+                audioStream = AudioSystem.getAudioInputStream(soundFile);
+            }
+            
+            Clip clip = AudioSystem.getClip();
+            clip.open(audioStream);
+            clip.start();
+            
+        } catch (Exception e) {
+        }
     }
 
     private void initializeBackgroundMusic() {
@@ -136,7 +204,9 @@ public class MainMenu extends JPanel {
     
     private JButton createMenuButton(String text) {
         JButton button = new JButton(text);
-        button.setFont(new Font("Arial", Font.BOLD, 16));
+        // Use a class constant for font size to ensure consistency
+        final Font DEFAULT_BUTTON_FONT = new Font("Arial", Font.BOLD, 16);
+        button.setFont(DEFAULT_BUTTON_FONT);
         button.setBackground(BUTTON_COLOR);
         button.setForeground(Color.WHITE);
         button.setFocusPainted(false);
@@ -287,15 +357,16 @@ public class MainMenu extends JPanel {
                 }
                 return glitched.toString();
             }
-            private Color interpolateColor(Color start, Color end, float ratio) {
-                int r = Math.round(start.getRed() + ratio * (end.getRed() - start.getRed()));
-                int g = Math.round(start.getGreen() + ratio * (end.getGreen() - start.getGreen()));
-                int b = Math.round(start.getBlue() + ratio * (end.getBlue() - start.getBlue()));
-                return new Color(r, g, b);
-            }
         });
         
         return button;
+    }
+    
+    private Color interpolateColor(Color start, Color end, float ratio) {
+        int r = Math.round(start.getRed() + ratio * (end.getRed() - start.getRed()));
+        int g = Math.round(start.getGreen() + ratio * (end.getGreen() - start.getGreen()));
+        int b = Math.round(start.getBlue() + ratio * (end.getBlue() - start.getBlue()));
+        return new Color(r, g, b);
     }
     
     private ImageIcon loadLogoGif() {
