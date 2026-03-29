@@ -30,7 +30,12 @@ mkdir -p bin
 javac -d bin src/*.java
 ```
 
-3. Run the application:
+3. Copy the assets folder into the bin directory:
+```powershell
+Copy-Item -Recurse src\assets\ bin\
+```
+
+4. Run the application:
 ```bash
 java -cp bin App
 ```
