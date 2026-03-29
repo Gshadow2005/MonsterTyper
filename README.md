@@ -10,6 +10,10 @@ Monster Typer is a typing defense game developed with Java and Swing. In this ga
 - Boss monsters require full phrases to defeat
 - Power-ups are unlocked by achieving perfect typing streaks
 
+### Screenshot
+
+![Monster Typer Gameplay](https://i.imgur.com/cEJ6aUP.png)
+
 ### Technical Information
 
 - Built using Java with Swing for the UI
