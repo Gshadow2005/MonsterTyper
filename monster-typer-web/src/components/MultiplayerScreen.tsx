@@ -155,6 +155,7 @@ export function MultiplayerScreen({
             : 'type the monster words…';
 
   const sorted = [...snapshot.players].sort((a, b) => b.score - a.score);
+  const finalBoard = [...snapshot.players].sort((a, b) => b.score - a.score || b.eliminatedAt - a.eliminatedAt);
 
   return (
     <div className="screen game-screen">
@@ -304,7 +305,7 @@ export function MultiplayerScreen({
                     : 'No one survived!'}
                 </h2>
                 <div className="final-board">
-                  {sorted.map((p, i) => (
+                  {finalBoard.map((p, i) => (
                     <div key={p.id} className="final-row" style={{ borderColor: p.color }}>
                       <span>#{i + 1}</span>
                       <span className="roster-dot" style={{ backgroundColor: p.color }} />

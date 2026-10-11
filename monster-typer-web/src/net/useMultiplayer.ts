@@ -62,6 +62,17 @@ export function useMultiplayer() {
     const engine = engineRef.current;
     if (!net || !engine) return;
 
+    const broadcastViews = () => {
+      if (engine.mode !== 'competitive') {
+        net.broadcast({ t: 'snapshot', state: makeSnapshot(engine) });
+        return;
+      }
+      for (const p of engine.players) {
+        if (p.id === hostPlayerIdRef.current) continue;
+        net.sendTo(p.id, { t: 'snapshot', state: makeSnapshot(engine, p.id) });
+      }
+    };
+
     let raf = 0;
     let last = performance.now();
     let accumulator = 0;
@@ -84,18 +95,18 @@ export function useMultiplayer() {
         accumulator -= C.TICK_MS;
         steps += 1;
       }
-      const snap = makeSnapshot(engine);
+      const snap = makeSnapshot(engine, hostPlayerIdRef.current);
       setSnapshot(snap);
       if (time - lastBroadcast >= 66) {
         lastBroadcast = time;
-        net.broadcast({ t: 'snapshot', state: snap });
+        broadcastViews();
       }
       if (!engine.gameOver) overSent = false;
       else if (!overSent) {
         overSent = true;
         setWinnerId(engine.winnerId);
         setPhaseSafe('ended');
-        net.broadcast({ t: 'snapshot', state: snap });
+        broadcastViews();
         gameMusic.stop();
       }
     };
@@ -223,7 +234,7 @@ export function useMultiplayer() {
     engineRef.current = engine;
     engine.startMultiplayer(modeRef.current, playersRef.current);
     net.broadcast({ t: 'start', mode: modeRef.current });
-    setSnapshot(makeSnapshot(engine));
+    setSnapshot(makeSnapshot(engine, hostPlayerIdRef.current));
     setWinnerId(null);
     setPhaseSafe('playing');
     gameMusic.play();
@@ -259,7 +270,7 @@ export function useMultiplayer() {
     if (!engine) return;
     engine.startMultiplayer(modeRef.current, playersRef.current);
     netRef.current?.broadcast({ t: 'start', mode: modeRef.current });
-    setSnapshot(makeSnapshot(engine));
+    setSnapshot(makeSnapshot(engine, hostPlayerIdRef.current));
     setWinnerId(null);
     setPhaseSafe('playing');
     gameMusic.play();

@@ -9,12 +9,8 @@ interface PendingHit {
   ticksLeft: number;
 }
 
-export class GameEngine {
-  monsters: Monster[] = [];
-  explosions: Explosion[] = [];
-  notifications: Notification[] = [];
-  flash: Flash | null = null;
-  shooter: ShooterState = {
+function newShooter(): ShooterState {
+  return {
     targetId: null,
     angle: 0,
     laserTicksLeft: 0,
@@ -23,6 +19,14 @@ export class GameEngine {
     shakeTicksLeft: 0,
     recenterAt: null,
   };
+}
+
+export class GameEngine {
+  monsters: Monster[] = [];
+  explosions: Explosion[] = [];
+  notifications: Notification[] = [];
+  flash: Flash | null = null;
+  shooter: ShooterState = newShooter();
 
   score = 0;
   lives = C.INITIAL_LIVES;
@@ -51,6 +55,8 @@ export class GameEngine {
   private clearInputAt: number | null = null;
   private decks: Record<Difficulty, WordDeck> = createDecks();
   private pendingHits: PendingHit[] = [];
+  private splitBossIds = new Set<number>();
+  private elimSeq = 0;
 
   start(): void {
     this.reset();
@@ -74,6 +80,10 @@ export class GameEngine {
       scrambleUntil: 0,
       scrambleShift: 0,
       clearSignal: 0,
+      eliminatedAt: 0,
+      hits: new Map(),
+      shooter: newShooter(),
+      explosions: [],
     }));
     this.running = true;
     this.spawnMonster();
@@ -108,6 +118,8 @@ export class GameEngine {
     this.scrambledUntil = 0;
     this.clearInputAt = null;
     this.pendingHits = [];
+    this.splitBossIds.clear();
+    this.elimSeq = 0;
   }
 
   togglePause(): void {
@@ -124,19 +136,39 @@ export class GameEngine {
     this.checkBreaches();
     if (this.running) this.maybeSpawn();
 
-    if (this.shooter.laserTicksLeft > 0) {
-      this.shooter.laserTicksLeft -= 1;
-      this.shooter.laserFrame = (this.shooter.laserFrame + 1) % C.LASER_FRAMES;
+    for (const s of this.allShooters()) {
+      if (s.laserTicksLeft > 0) {
+        s.laserTicksLeft -= 1;
+        s.laserFrame = (s.laserFrame + 1) % C.LASER_FRAMES;
+      }
+      if (s.attackTicksLeft > 0) s.attackTicksLeft -= 1;
     }
-    if (this.shooter.attackTicksLeft > 0) this.shooter.attackTicksLeft -= 1;
     this.resolvePendingHits();
-    if (this.shooter.recenterAt !== null && this.now >= this.shooter.recenterAt) {
-      this.shooter.recenterAt = null;
-      this.shooter.targetId = null;
+    for (const s of this.allShooters()) {
+      if (s.recenterAt !== null && this.now >= s.recenterAt) {
+        s.recenterAt = null;
+        s.targetId = null;
+      }
+      if (s.shakeTicksLeft > 0) s.shakeTicksLeft -= 1;
     }
-    if (this.shooter.shakeTicksLeft > 0) this.shooter.shakeTicksLeft -= 1;
 
     this.updateExplosions();
+    if (this.mode === 'competitive') {
+      for (const p of this.players) p.explosions = this.stepExplosions(p.explosions);
+    }
+  }
+
+  private allShooters(): ShooterState[] {
+    if (this.mode !== 'competitive') return [this.shooter];
+    return this.players.map((p) => p.shooter);
+  }
+
+  private shooterFor(playerId: string | null): ShooterState {
+    if (this.mode === 'competitive' && playerId) {
+      const p = this.players.find((x) => x.id === playerId);
+      if (p) return p.shooter;
+    }
+    return this.shooter;
   }
 
   private updateTimers(): void {
@@ -183,16 +215,20 @@ export class GameEngine {
     const breached = this.monsters.filter((m) => m.relX <= C.BASE_THRESHOLD);
     if (breached.length === 0) return;
     let worstLoss = 0;
+    const charged = new Map<MPlayer, number>();
     for (const m of breached) {
       const loss = m.health > 1 ? C.BOSS_BREACH_LIVES_PENALTY : 1;
       worstLoss = Math.max(worstLoss, loss);
       if (this.mode === 'competitive') {
         for (const p of this.players) {
           if (p.eliminated) continue;
+          if ((p.hits.get(m.id) ?? 0) >= m.maxHealth) continue;
           p.lives = Math.max(0, p.lives - loss);
           p.streak = 0;
+          charged.set(p, (charged.get(p) ?? 0) + loss);
           if (p.lives === 0) {
             p.eliminated = true;
+            p.eliminatedAt = ++this.elimSeq;
             this.notify(`${p.name} eliminated!`, p.color);
           }
         }
@@ -204,7 +240,11 @@ export class GameEngine {
         this.streak = 0;
       }
     }
-    this.notify(`-${worstLoss} Life!`, '#ff4444');
+    if (this.mode === 'competitive') {
+      for (const [p, amount] of charged) this.notify(`${p.name} -${amount} Life!`, '#ff4444');
+    } else {
+      this.notify(`-${worstLoss} Life!`, '#ff4444');
+    }
     const breachedIds = new Set(breached.map((m) => m.id));
     this.monsters = this.monsters.filter((m) => !breachedIds.has(m.id));
     this.checkEndCondition();
@@ -212,9 +252,10 @@ export class GameEngine {
 
   private checkEndCondition(): void {
     if (this.mode === 'competitive') {
-      const standing = this.players.filter((p) => !p.eliminated);
-      if (standing.length === 0 || (standing.length === 1 && this.players.length > 1)) {
-        this.winnerId = standing[0]?.id ?? null;
+      if (this.players.length > 0 && this.players.every((p) => p.eliminated)) {
+        this.winnerId = [...this.players].sort(
+          (a, b) => b.score - a.score || b.eliminatedAt - a.eliminatedAt,
+        )[0]?.id ?? null;
         this.endGame();
       }
     } else if (this.mode === 'coop') {
@@ -280,6 +321,7 @@ export class GameEngine {
       thirdWord: null,
       power,
       health: 1,
+      maxHealth: 1,
       size: C.MONSTER_SIZE,
       isChild: false,
       hitFlashTicks: 0,
@@ -287,6 +329,7 @@ export class GameEngine {
 
     if (power === 'boss') {
       monster.health = C.BOSS_HEALTH;
+      monster.maxHealth = C.BOSS_HEALTH;
       monster.size = C.MONSTER_SIZE * 3.5;
       avoid.add(word);
       monster.secondWord = this.decks.medium.draw(avoid);
@@ -340,11 +383,12 @@ export class GameEngine {
   }
 
   private fire(monster: Monster, killerId: string | null): void {
-    this.shooter.targetId = monster.id;
-    this.shooter.laserTicksLeft = C.LASER_TICKS;
-    this.shooter.attackTicksLeft = C.ATTACK_TICKS;
-    this.shooter.laserFrame = 0;
-    this.shooter.recenterAt = null;
+    const shooter = this.shooterFor(killerId);
+    shooter.targetId = monster.id;
+    shooter.laserTicksLeft = C.LASER_TICKS;
+    shooter.attackTicksLeft = C.ATTACK_TICKS;
+    shooter.laserFrame = 0;
+    shooter.recenterAt = null;
     sfx.gun.play();
     const hit: PendingHit = { id: monster.id, killerId, ticksLeft: C.ATTACK_TICKS };
     if (this.mode === 'competitive') this.pendingHits.push(hit);
@@ -365,12 +409,17 @@ export class GameEngine {
       const monster = this.monsters.find((m) => m.id === hit.id);
       if (monster) this.hitMonster(monster, hit.killerId);
     }
-    if (ready.length > 0 && this.pendingHits.length === 0) {
-      this.shooter.recenterAt = this.now + C.SHOOTER_RECENTER_DELAY;
+    for (const hit of ready) {
+      const stillFiring = this.pendingHits.some((h) => h.killerId === hit.killerId);
+      if (!stillFiring) this.shooterFor(hit.killerId).recenterAt = this.now + C.SHOOTER_RECENTER_DELAY;
     }
   }
 
   private hitMonster(monster: Monster, killerId: string | null): void {
+    if (this.mode === 'competitive') {
+      this.hitMonsterCompetitive(monster, killerId);
+      return;
+    }
     monster.health -= 1;
     monster.hitFlashTicks = C.HIT_FLASH_TICKS;
     this.shooter.shakeTicksLeft = C.SHAKE_TICKS;
@@ -413,6 +462,56 @@ export class GameEngine {
     this.clearSignal += 1;
   }
 
+  private hitMonsterCompetitive(monster: Monster, killerId: string | null): void {
+    const killer = killerId ? this.players.find((p) => p.id === killerId) ?? null : null;
+    if (!killer) return;
+
+    const hits = (killer.hits.get(monster.id) ?? 0) + 1;
+    killer.hits.set(monster.id, hits);
+    monster.hitFlashTicks = C.HIT_FLASH_TICKS;
+    killer.shooter.shakeTicksLeft = C.SHAKE_TICKS;
+    sfx.hurt.play();
+
+    if (hits < monster.maxHealth) return;
+
+    if (monster.power === 'jam') this.startKeyboardJamFor(killer);
+    if (monster.power === 'life') this.increaseLifeFor(killer);
+    if (monster.power === 'reverse') this.startInputScrambleFor(killer);
+
+    this.addExplosion(monster.relX, monster.relY, killer.id);
+    this.creditKill(killer);
+
+    const stillNeeded = this.players.some(
+      (p) => !p.eliminated && (p.hits.get(monster.id) ?? 0) < monster.maxHealth,
+    );
+    if (stillNeeded) return;
+    if (monster.power === 'boss' && !this.splitBossIds.has(monster.id)) {
+      this.splitBossIds.add(monster.id);
+      this.splitBoss(monster);
+    }
+    this.monsters = this.monsters.filter((m) => m.id !== monster.id);
+  }
+
+  wordFor(monster: Monster, player: MPlayer): string {
+    if (monster.power === 'boss') {
+      const hits = player.hits.get(monster.id) ?? 0;
+      if (hits === 1 && monster.secondWord) return monster.secondWord;
+      if (hits === 2 && monster.thirdWord) return monster.thirdWord;
+    }
+    return monster.word;
+  }
+
+  viewFor(player: MPlayer): Monster[] {
+    if (this.mode !== 'competitive') return [...this.monsters];
+    const view: Monster[] = [];
+    for (const m of this.monsters) {
+      const hits = player.hits.get(m.id) ?? 0;
+      if (hits >= m.maxHealth) continue;
+      view.push({ ...m, word: this.wordFor(m, player), health: Math.max(0, m.maxHealth - hits) });
+    }
+    return view;
+  }
+
   private creditKill(player: MPlayer): void {
     player.score += C.SCORE_PER_MONSTER;
     player.streak += 1;
@@ -421,7 +520,7 @@ export class GameEngine {
     this.updateDifficulty();
     if (player.streak >= C.PERFECT_HITS_FOR_POWERUP) {
       player.streak = 0;
-      this.activateRandomPowerUp();
+      this.activateRandomPowerUp(player);
     }
   }
 
@@ -431,6 +530,7 @@ export class GameEngine {
     if (this.mode === 'competitive') {
       if (!player.eliminated) {
         player.eliminated = true;
+        player.eliminatedAt = ++this.elimSeq;
         this.notify(`${player.name} left the game`, player.color);
       }
     } else {
@@ -448,14 +548,15 @@ export class GameEngine {
     player.typedText = text;
     if (!text) return false;
 
-    const target = this.monsters.find((m) => m.word === text);
+    const mine = this.mode === 'competitive' ? this.viewFor(player) : this.monsters;
+    const target = mine.find((m) => m.word === text);
     if (target) {
       this.fire(target, playerId);
       player.typedText = '';
       player.clearSignal += 1;
       return true;
     }
-    const isPartial = this.monsters.some((m) => m.word.startsWith(text));
+    const isPartial = mine.some((m) => m.word.startsWith(text));
     if (!isPartial) player.streak = 0;
     return false;
   }
@@ -481,6 +582,7 @@ export class GameEngine {
         thirdWord: null,
         power: 'none',
         health: 1,
+        maxHealth: 1,
         size: childSize,
         isChild: true,
         hitFlashTicks: 0,
@@ -518,6 +620,7 @@ export class GameEngine {
       scrambleMsLeft: Math.max(0, p.scrambleUntil - this.now),
       scrambleShift: p.scrambleShift,
       clearSignal: p.clearSignal,
+      eliminatedAt: p.eliminatedAt,
     }));
   }
 
@@ -566,11 +669,11 @@ export class GameEngine {
     return ch === ch.toUpperCase() && ch !== ch.toLowerCase() ? mapped.toUpperCase() : mapped;
   }
 
-  private activateRandomPowerUp(): void {
+  private activateRandomPowerUp(player?: MPlayer): void {
     const choices: Array<() => void> = [
       () => this.activateFreeze(),
-      () => this.activateSkipWord(),
-      () => this.activateKillAll(),
+      () => this.activateSkipWord(player),
+      () => this.activateKillAll(player),
     ];
     choices[Math.floor(Math.random() * choices.length)]();
   }
@@ -583,7 +686,7 @@ export class GameEngine {
     this.notify('Freeze Activated!', '#66ccff');
   }
 
-  private activateSkipWord(): void {
+  private activateSkipWord(player?: MPlayer): void {
     if (this.monsters.length <= 1) {
       this.notify('No Other Words to Skip!', '#aaaaaa');
       return;
@@ -595,29 +698,49 @@ export class GameEngine {
     this.flash = { color: 'rgba(0,255,0,0.25)', expiresAt: this.now + C.POWERUP_FLASH_DURATION };
     sfx.skip.play();
     this.increaseScore();
+    this.creditPowerUpKill(player);
     this.notify('Word Skipped!', '#44ff44');
   }
 
-  private activateKillAll(): void {
+  private activateKillAll(player?: MPlayer): void {
     for (const m of this.monsters) this.addExplosion(m.relX, m.relY);
     const count = this.monsters.length;
     this.monsters = [];
     this.flash = { color: 'rgba(255,0,0,0.25)', expiresAt: this.now + C.POWERUP_FLASH_DURATION };
     sfx.execution.play();
-    for (let i = 0; i < count; i++) this.increaseScore();
+    for (let i = 0; i < count; i++) {
+      this.increaseScore();
+      this.creditPowerUpKill(player);
+    }
     this.notify('All Monsters Defeated!', '#ff4444');
   }
 
-  private addExplosion(relX: number, relY: number): void {
+  private creditPowerUpKill(player?: MPlayer): void {
+    if (!player || this.mode !== 'competitive') return;
+    player.score += C.SCORE_PER_MONSTER;
+  }
+
+  private addExplosion(relX: number, relY: number, killerId?: string): void {
+    if (killerId) {
+      const killer = this.players.find((p) => p.id === killerId);
+      if (killer) {
+        killer.explosions.push({ id: this.nextId++, relX, relY, frame: 0, ticks: 0 });
+        return;
+      }
+    }
     this.explosions.push({ id: this.nextId++, relX, relY, frame: 0, ticks: 0 });
   }
 
   private updateExplosions(): void {
-    for (const e of this.explosions) {
+    this.explosions = this.stepExplosions(this.explosions);
+  }
+
+  private stepExplosions(list: Explosion[]): Explosion[] {
+    for (const e of list) {
       e.ticks += 1;
       if (e.ticks % C.EXPLOSION_TICKS_PER_FRAME === 0) e.frame += 1;
     }
-    this.explosions = this.explosions.filter((e) => e.frame < C.EXPLOSION_FRAMES);
+    return list.filter((e) => e.frame < C.EXPLOSION_FRAMES);
   }
 
   private notify(text: string, color: string): void {

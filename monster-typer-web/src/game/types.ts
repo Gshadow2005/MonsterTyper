@@ -20,6 +20,10 @@ export interface MPlayer extends LobbyPlayer {
   scrambleUntil: number;
   scrambleShift: number;
   clearSignal: number;
+  eliminatedAt: number;
+  hits: Map<number, number>;
+  shooter: ShooterState;
+  explosions: Explosion[];
 }
 
 export interface MPlayerView extends LobbyPlayer {
@@ -32,6 +36,7 @@ export interface MPlayerView extends LobbyPlayer {
   scrambleMsLeft: number;
   scrambleShift: number;
   clearSignal: number;
+  eliminatedAt: number;
 }
 
 export interface Monster {
@@ -44,6 +49,7 @@ export interface Monster {
   thirdWord: string | null;
   power: PowerType;
   health: number;
+  maxHealth: number;
   size: number;
   isChild: boolean;
   hitFlashTicks: number;

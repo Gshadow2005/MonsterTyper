@@ -48,10 +48,14 @@ export function useGameEngine() {
   return { engine, snapshot, best };
 }
 
-export function makeSnapshot(engine: GameEngine): GameState {
+export function makeSnapshot(engine: GameEngine, viewerId?: string | null): GameState {
+  const viewer = viewerId ? engine.players.find((p) => p.id === viewerId) ?? null : null;
+  const personal = engine.mode === 'competitive' && viewer !== null;
   return {
-    monsters: [...engine.monsters],
-    explosions: [...engine.explosions],
+    monsters: personal ? engine.viewFor(viewer!) : [...engine.monsters],
+    explosions: personal
+      ? [...engine.explosions, ...viewer!.explosions].map((e) => ({ ...e }))
+      : [...engine.explosions],
     score: engine.score,
     lives: engine.lives,
     streak: engine.streak,
@@ -64,7 +68,7 @@ export function makeSnapshot(engine: GameEngine): GameState {
     scrambleMsLeft: engine.scrambleMsLeft,
     notifications: [...engine.notifications],
     flash: engine.flash,
-    shooter: { ...engine.shooter },
+    shooter: personal ? { ...viewer!.shooter } : { ...engine.shooter },
     running: engine.running,
     paused: engine.paused,
     gameOver: engine.gameOver,
