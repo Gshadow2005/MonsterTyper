@@ -2,16 +2,16 @@ import { SHOOTER_X } from '../game/constants';
 
 export function ShooterView({
   angle,
-  laserFrame,
   laserActive,
   shake,
   scale,
+  shotId,
 }: {
   angle: number;
-  laserFrame: number;
   laserActive: boolean;
   shake: boolean;
   scale: number;
+  shotId: number;
 }) {
   const shooterSize = 46.7 * scale;
   const laserW = 100 * scale;
@@ -36,7 +36,8 @@ export function ShooterView({
       />
       {laserActive && (
         <img
-          src={`/assets/Laser/Laser_Beam${laserFrame + 1}.png`}
+          key={shotId}
+          src="/assets/Laser/Laser.webp"
           alt=""
           className="laser"
           style={{

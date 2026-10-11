@@ -211,10 +211,10 @@ export function MultiplayerScreen({
 
         <ShooterView
           angle={angleRef.current}
-          laserFrame={shooter.laserFrame}
           laserActive={shooter.laserTicksLeft > 0}
           shake={shooter.shakeTicksLeft > 0}
           scale={scale}
+          shotId={shooter.shotId}
         />
 
         {snapshot.flash && <div className="arena-flash" style={{ backgroundColor: snapshot.flash.color }} />}
@@ -227,7 +227,7 @@ export function MultiplayerScreen({
         {snapshot.explosions.map((e) => (
           <img
             key={e.id}
-            src={`/assets/Explosion/Explosion${Math.min(e.frame + 1, 12)}.png`}
+            src="/assets/Explosion/Explosion.webp"
             alt=""
             className="explosion"
             style={{

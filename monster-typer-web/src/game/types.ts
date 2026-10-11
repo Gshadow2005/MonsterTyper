@@ -74,7 +74,7 @@ export interface ShooterState {
   angle: number;
   laserTicksLeft: number;
   attackTicksLeft: number;
-  laserFrame: number;
+  shotId: number;
   shakeTicksLeft: number;
   recenterAt: number | null;
 }
