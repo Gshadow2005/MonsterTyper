@@ -33,15 +33,32 @@ export function OnlineScreen({
 }) {
   const [name, setName] = useState('');
   const [joinCode, setJoinCode] = useState('');
+  const [formError, setFormError] = useState('');
+
+  const cleanName = name.trim();
 
   const startClick = () => {
     sfx.click.play();
-    if (name.trim()) onCreate(name.trim());
+    if (!cleanName) {
+      setFormError('Enter your name to create a room.');
+      return;
+    }
+    setFormError('');
+    onCreate(cleanName);
   };
 
   const joinClick = () => {
     sfx.click.play();
-    if (joinCode.trim()) onJoin(joinCode.trim(), name.trim());
+    if (!cleanName) {
+      setFormError('Enter your name to join a room.');
+      return;
+    }
+    if (joinCode.trim().length !== 4) {
+      setFormError('Enter the 4-letter room code.');
+      return;
+    }
+    setFormError('');
+    onJoin(joinCode.trim(), cleanName);
   };
 
   if (phase === 'connecting') {
@@ -83,6 +100,7 @@ export function OnlineScreen({
         <p className="online-hint">
           {mode === 'coop' ? 'Shared lives and score — survive together!' : 'Individual lives — last one standing wins!'}
         </p>
+        {role !== 'host' && <p className="online-hint lobby-mode-locked">Host controls the game mode</p>}
 
         <div className="lobby-players">
           {players.map((p) => (
@@ -135,6 +153,7 @@ export function OnlineScreen({
           onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
         />
         <GlitchButton label="Join Room" onClick={joinClick} />
+        {formError && <p className="online-hint online-error">{formError}</p>}
       </div>
       <GlitchButton label="Back" onClick={onLeave} />
     </div>

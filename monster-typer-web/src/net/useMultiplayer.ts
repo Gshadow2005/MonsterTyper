@@ -8,6 +8,9 @@ import { MAX_PLAYERS, makeRoomCode, NetManager, PLAYER_COLORS } from './net';
 
 export type MpPhase = 'idle' | 'connecting' | 'lobby' | 'playing' | 'ended' | 'error';
 
+const HOST_STALE_MS = 4000;
+const HOST_WATCH_INTERVAL_MS = 500;
+
 export function useMultiplayer() {
   const netRef = useRef<NetManager | null>(null);
   const engineRef = useRef<GameEngine | null>(null);
@@ -21,6 +24,8 @@ export function useMultiplayer() {
   const [myId, setMyId] = useState<string | null>(null);
   const [winnerId, setWinnerId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
+  const [hostStalled, setHostStalled] = useState(false);
+  const lastSnapshotAtRef = useRef(0);
   const phaseRef = useRef<MpPhase>('idle');
   const modeRef = useRef<GameMode>('coop');
   const playersRef = useRef<LobbyPlayer[]>([]);
@@ -47,6 +52,7 @@ export function useMultiplayer() {
     playersRef.current = [];
     setRole(null);
     setMyId(null);
+    setHostStalled(false);
     setPhaseSafe('idle');
   }, [stopLoops]);
 
@@ -64,6 +70,12 @@ export function useMultiplayer() {
 
     const loop = (time: number) => {
       raf = requestAnimationFrame(loop);
+      if (document.hidden) {
+        last = time;
+        accumulator = 0;
+        lastBroadcast = time;
+        return;
+      }
       accumulator += Math.min(time - last, 250);
       last = time;
       let steps = 0;
@@ -170,10 +182,14 @@ export function useMultiplayer() {
       net.onStart = () => {
         setSnapshot(null);
         setWinnerId(null);
+        setHostStalled(false);
+        lastSnapshotAtRef.current = performance.now();
         setPhaseSafe('playing');
         gameMusic.play();
       };
       net.onSnapshot = (state) => {
+        lastSnapshotAtRef.current = performance.now();
+        setHostStalled(false);
         setSnapshot(state);
         if (state.gameOver) {
           setWinnerId(state.winnerId);
@@ -225,10 +241,11 @@ export function useMultiplayer() {
   }, []);
 
   const changeMode = useCallback((newMode: GameMode) => {
+    if (role !== 'host') return;
     modeRef.current = newMode;
     setMode(newMode);
     netRef.current?.broadcast({ t: 'lobby', players: playersRef.current, mode: newMode });
-  }, []);
+  }, [role]);
 
   const leaveRoom = useCallback(() => {
     netRef.current?.sendLeave();
@@ -250,6 +267,14 @@ export function useMultiplayer() {
 
   useEffect(() => teardown, [teardown]);
 
+  useEffect(() => {
+    if (phase !== 'playing' || role !== 'client') return;
+    const id = window.setInterval(() => {
+      if (performance.now() - lastSnapshotAtRef.current > HOST_STALE_MS) setHostStalled(true);
+    }, HOST_WATCH_INTERVAL_MS);
+    return () => window.clearInterval(id);
+  }, [phase, role]);
+
   return {
     phase,
     role,
@@ -260,6 +285,7 @@ export function useMultiplayer() {
     myId,
     winnerId,
     errorMsg,
+    hostStalled,
     createRoom,
     joinRoom,
     startGame,

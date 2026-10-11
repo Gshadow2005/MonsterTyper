@@ -8,14 +8,14 @@ export function Hud({
   streak,
   best,
   difficulty,
-  onBackToMenu,
+  onPause,
 }: {
   score: number;
   lives: number;
   streak: number;
   best: number;
   difficulty: Difficulty;
-  onBackToMenu: () => void;
+  onPause: () => void;
 }) {
   return (
     <div className="hud">
@@ -51,8 +51,8 @@ export function Hud({
         <div className="hud-best">{Math.max(best, score)}</div>
       </div>
 
-      <button className="back-button" onClick={onBackToMenu}>
-        Menu
+      <button className="back-button" onClick={onPause}>
+        Pause
       </button>
     </div>
   );

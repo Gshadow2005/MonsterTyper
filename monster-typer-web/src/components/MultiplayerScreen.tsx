@@ -19,6 +19,7 @@ export function MultiplayerScreen({
   role,
   winnerId,
   mode,
+  hostStalled,
   onInput,
   onHostInput,
   onRematch,
@@ -29,6 +30,7 @@ export function MultiplayerScreen({
   role: 'host' | 'client';
   winnerId: string | null;
   mode: 'coop' | 'competitive';
+  hostStalled: boolean;
   onInput: (text: string) => void;
   onHostInput: (text: string) => boolean;
   onRematch: () => void;
@@ -92,7 +94,7 @@ export function MultiplayerScreen({
   const jammed = (me?.jamMsLeft ?? 0) > 0;
   const scrambled = (me?.scrambleMsLeft ?? 0) > 0;
   const eliminated = me?.eliminated ?? false;
-  const inputDead = jammed || eliminated || snapshot.gameOver;
+  const inputDead = jammed || eliminated || snapshot.gameOver || hostStalled;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const v = e.target.value;
@@ -142,13 +144,15 @@ export function MultiplayerScreen({
 
   const placeholder = eliminated
     ? 'ELIMINATED — spectating…'
-    : snapshot.gameOver
-      ? 'GAME OVER'
-      : jammed
-        ? `JAMMED — ${(me!.jamMsLeft / 1000).toFixed(1)}s`
-        : scrambled
-          ? 'SCRAMBLED — type the words anyway…'
-          : 'type the monster words…';
+    : hostStalled
+      ? 'PAUSED — waiting for host…'
+      : snapshot.gameOver
+        ? 'GAME OVER'
+        : jammed
+          ? `JAMMED — ${(me!.jamMsLeft / 1000).toFixed(1)}s`
+          : scrambled
+            ? 'SCRAMBLED — type the words anyway…'
+            : 'type the monster words…';
 
   const sorted = [...snapshot.players].sort((a, b) => b.score - a.score);
 
@@ -277,6 +281,17 @@ export function MultiplayerScreen({
           </span>
         </div>
       </div>
+
+      {hostStalled && !snapshot.gameOver && (
+        <div className="modal-backdrop stall-overlay">
+          <div className="modal">
+            <h2 className="pause-title">PAUSED</h2>
+            <p className="online-hint">
+              The host lost connection or switched tabs. The game resumes automatically once the host is back.
+            </p>
+          </div>
+        </div>
+      )}
 
       {snapshot.gameOver && (
         <div className="modal-backdrop">

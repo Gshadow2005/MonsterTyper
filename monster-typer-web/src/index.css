@@ -834,3 +834,27 @@ body,
 .final-score {
   color: #ffcc33;
 }
+
+.stall-overlay {
+  z-index: 25;
+}
+
+.lobby-mode-locked {
+  font-size: 0.78rem;
+  opacity: 0.75;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.small-screen-block {
+  text-align: center;
+  padding: 24px;
+}
+
+.small-screen-message {
+  max-width: 30ch;
+  font-size: 1.15rem;
+  line-height: 1.6;
+  letter-spacing: 1px;
+  color: #aab;
+}

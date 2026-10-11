@@ -8,6 +8,7 @@ import { InputBar } from './InputBar';
 import { MonsterView } from './MonsterView';
 import { ShooterView } from './ShooterView';
 import { GameOverScreen } from './GameOverScreen';
+import { GlitchButton } from './GlitchButton';
 
 export function GameScreen({
   engine,
@@ -72,7 +73,7 @@ export function GameScreen({
         streak={snapshot.streak}
         best={best}
         difficulty={snapshot.difficulty}
-        onBackToMenu={onBackToMenu}
+        onPause={() => engine.togglePause()}
       />
 
       <div ref={arenaRef} className="arena" onClick={() => document.querySelector<HTMLInputElement>('.game-input')?.focus()}>
@@ -125,7 +126,10 @@ export function GameScreen({
         {snapshot.paused && !snapshot.gameOver && (
           <div className="modal-backdrop pause-overlay">
             <h2 className="pause-title">PAUSED</h2>
-            <p>Press Esc to resume</p>
+            <div className="menu-buttons">
+              <GlitchButton label="Resume" onClick={() => engine.togglePause()} />
+              <GlitchButton label="Back to Menu" onClick={onBackToMenu} />
+            </div>
           </div>
         )}
       </div>

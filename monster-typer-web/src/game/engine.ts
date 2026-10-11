@@ -3,6 +3,12 @@ import type { Difficulty, Explosion, Flash, GameMode, LobbyPlayer, Monster, MPla
 import { createDecks, WordDeck } from './words';
 import { sfx } from './sound';
 
+interface PendingHit {
+  id: number;
+  killerId: string | null;
+  ticksLeft: number;
+}
+
 export class GameEngine {
   monsters: Monster[] = [];
   explosions: Explosion[] = [];
@@ -44,7 +50,7 @@ export class GameEngine {
   private scrambleMap = new Map<string, string>();
   private clearInputAt: number | null = null;
   private decks: Record<Difficulty, WordDeck> = createDecks();
-  private pendingKillerId: string | null = null;
+  private pendingHits: PendingHit[] = [];
 
   start(): void {
     this.reset();
@@ -96,13 +102,12 @@ export class GameEngine {
     this.mode = 'solo';
     this.players = [];
     this.winnerId = null;
-    this.pendingKillerId = null;
     this.now = 0;
     this.frozenUntil = 0;
     this.jammedUntil = 0;
     this.scrambledUntil = 0;
     this.clearInputAt = null;
-    this.pendingHitId = null;
+    this.pendingHits = [];
   }
 
   togglePause(): void {
@@ -123,10 +128,8 @@ export class GameEngine {
       this.shooter.laserTicksLeft -= 1;
       this.shooter.laserFrame = (this.shooter.laserFrame + 1) % C.LASER_FRAMES;
     }
-    if (this.shooter.attackTicksLeft > 0) {
-      this.shooter.attackTicksLeft -= 1;
-      if (this.shooter.attackTicksLeft === 0) this.resolvePendingHit();
-    }
+    if (this.shooter.attackTicksLeft > 0) this.shooter.attackTicksLeft -= 1;
+    this.resolvePendingHits();
     if (this.shooter.recenterAt !== null && this.now >= this.shooter.recenterAt) {
       this.shooter.recenterAt = null;
       this.shooter.targetId = null;
@@ -343,20 +346,28 @@ export class GameEngine {
     this.shooter.laserFrame = 0;
     this.shooter.recenterAt = null;
     sfx.gun.play();
-    this.pendingHitId = monster.id;
-    this.pendingKillerId = killerId;
+    const hit: PendingHit = { id: monster.id, killerId, ticksLeft: C.ATTACK_TICKS };
+    if (this.mode === 'competitive') this.pendingHits.push(hit);
+    else this.pendingHits = [hit];
   }
 
-  private pendingHitId: number | null = null;
-
-  private resolvePendingHit(): void {
-    if (this.pendingHitId === null) return;
-    const monster = this.monsters.find((m) => m.id === this.pendingHitId);
-    const killerId = this.pendingKillerId;
-    this.pendingHitId = null;
-    this.pendingKillerId = null;
-    if (monster) this.hitMonster(monster, killerId);
-    this.shooter.recenterAt = this.now + C.SHOOTER_RECENTER_DELAY;
+  private resolvePendingHits(): void {
+    if (this.pendingHits.length === 0) return;
+    const ready: PendingHit[] = [];
+    const waiting: PendingHit[] = [];
+    for (const hit of this.pendingHits) {
+      hit.ticksLeft -= 1;
+      if (hit.ticksLeft <= 0) ready.push(hit);
+      else waiting.push(hit);
+    }
+    this.pendingHits = waiting;
+    for (const hit of ready) {
+      const monster = this.monsters.find((m) => m.id === hit.id);
+      if (monster) this.hitMonster(monster, hit.killerId);
+    }
+    if (ready.length > 0 && this.pendingHits.length === 0) {
+      this.shooter.recenterAt = this.now + C.SHOOTER_RECENTER_DELAY;
+    }
   }
 
   private hitMonster(monster: Monster, killerId: string | null): void {

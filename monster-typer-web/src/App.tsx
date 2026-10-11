@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useGameEngine } from './game/useGameEngine';
 import { gameMusic, menuMusic } from './game/sound';
 import { MainMenu } from './components/MainMenu';
@@ -9,10 +9,24 @@ import { useMultiplayer } from './net/useMultiplayer';
 
 type Screen = 'menu' | 'game' | 'online';
 
+const SMALL_SCREEN_QUERY = '(max-width: 820px), (max-height: 560px)';
+
+function useSmallScreen(): boolean {
+  const [small, setSmall] = useState(() => window.matchMedia(SMALL_SCREEN_QUERY).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(SMALL_SCREEN_QUERY);
+    const onChange = (e: MediaQueryListEvent) => setSmall(e.matches);
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+  return small;
+}
+
 export function App() {
   const { engine, snapshot, best } = useGameEngine();
   const mp = useMultiplayer();
   const [screen, setScreen] = useState<Screen>('menu');
+  const smallScreen = useSmallScreen();
 
   const startGame = () => {
     engine.start();
@@ -39,6 +53,15 @@ export function App() {
     setScreen('menu');
   };
 
+  if (smallScreen) {
+    return (
+      <div className="screen menu-screen small-screen-block">
+        <h1 className="online-title">Monster Typer</h1>
+        <p className="small-screen-message">Please play this game on a bigger screen.</p>
+      </div>
+    );
+  }
+
   if (screen === 'game') {
     return <GameScreen engine={engine} snapshot={snapshot} best={best} onBackToMenu={backToMenu} />;
   }
@@ -52,6 +75,7 @@ export function App() {
           role={mp.role ?? 'client'}
           winnerId={mp.winnerId}
           mode={mp.mode}
+          hostStalled={mp.hostStalled}
           onInput={mp.sendInput}
           onHostInput={mp.submitHostInput}
           onRematch={mp.rematch}
