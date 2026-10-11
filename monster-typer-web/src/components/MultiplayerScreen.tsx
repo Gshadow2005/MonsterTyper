@@ -23,6 +23,7 @@ export function MultiplayerScreen({
   onInput,
   onHostInput,
   onRematch,
+  onChangeMode,
   onLeave,
 }: {
   snapshot: GameState;
@@ -34,6 +35,7 @@ export function MultiplayerScreen({
   onInput: (text: string) => void;
   onHostInput: (text: string) => boolean;
   onRematch: () => void;
+  onChangeMode: () => void;
   onLeave: () => void;
 }) {
   const arenaRef = useRef<HTMLDivElement>(null);
@@ -331,8 +333,14 @@ export function MultiplayerScreen({
               </>
             )}
             <div className="menu-buttons">
-              {role === 'host' && <GlitchButton label="Rematch" onClick={onRematch} />}
-              {role === 'client' && <p className="online-hint">Waiting for host to rematch…</p>}
+              {role === 'host' ? (
+                <>
+                  <GlitchButton label="Rematch" onClick={onRematch} />
+                  <GlitchButton label="Change Mode" onClick={onChangeMode} />
+                </>
+              ) : (
+                <p className="online-hint">Waiting for host to rematch or change mode…</p>
+              )}
               <GlitchButton label="Leave" onClick={onLeave} />
             </div>
           </div>

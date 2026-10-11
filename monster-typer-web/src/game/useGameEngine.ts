@@ -66,7 +66,9 @@ export function makeSnapshot(engine: GameEngine, viewerId?: string | null): Game
     freezeMsLeft: engine.freezeMsLeft,
     jamMsLeft: engine.jamMsLeft,
     scrambleMsLeft: engine.scrambleMsLeft,
-    notifications: [...engine.notifications],
+    notifications: personal
+      ? engine.notifications.filter((n) => n.ownerId === null || n.ownerId === viewer!.id)
+      : [...engine.notifications],
     flash: engine.flash,
     shooter: personal ? { ...viewer!.shooter } : { ...engine.shooter },
     running: engine.running,

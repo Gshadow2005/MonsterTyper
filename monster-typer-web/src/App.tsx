@@ -79,6 +79,7 @@ export function App() {
           onInput={mp.sendInput}
           onHostInput={mp.submitHostInput}
           onRematch={mp.rematch}
+          onChangeMode={mp.returnToLobby}
           onLeave={closeOnline}
         />
       );

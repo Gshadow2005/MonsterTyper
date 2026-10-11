@@ -276,6 +276,15 @@ export function useMultiplayer() {
     gameMusic.play();
   }, [role]);
 
+  const returnToLobby = useCallback(() => {
+    if (role !== 'host') return;
+    stopLoops();
+    netRef.current?.broadcast({ t: 'lobby', players: playersRef.current, mode: modeRef.current });
+    setSnapshot(null);
+    setWinnerId(null);
+    setPhaseSafe('lobby');
+  }, [role, stopLoops]);
+
   useEffect(() => teardown, [teardown]);
 
   useEffect(() => {
@@ -305,6 +314,7 @@ export function useMultiplayer() {
     changeMode,
     leaveRoom,
     rematch,
+    returnToLobby,
     teardown,
   };
 }

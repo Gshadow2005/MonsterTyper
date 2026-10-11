@@ -68,6 +68,7 @@ export interface Notification {
   text: string;
   color: string;
   expiresAt: number;
+  ownerId: string | null;
 }
 
 export interface Flash {

@@ -229,7 +229,7 @@ export class GameEngine {
           if (p.lives === 0) {
             p.eliminated = true;
             p.eliminatedAt = ++this.elimSeq;
-            this.notify(`${p.name} eliminated!`, p.color);
+            this.notify('You have been eliminated!', p.color, p.id);
           }
         }
       } else if (this.mode === 'coop') {
@@ -241,7 +241,7 @@ export class GameEngine {
       }
     }
     if (this.mode === 'competitive') {
-      for (const [p, amount] of charged) this.notify(`${p.name} -${amount} Life!`, '#ff4444');
+      for (const [p, amount] of charged) this.notify(`-${amount} Life!`, '#ff4444', p.id);
     } else {
       this.notify(`-${worstLoss} Life!`, '#ff4444');
     }
@@ -603,7 +603,8 @@ export class GameEngine {
 
   increaseLifeFor(player: MPlayer): void {
     player.lives += 1;
-    this.notify(`${player.name} +1 Life!`, '#44ff66');
+    if (this.mode === 'competitive') this.notify('+1 Life!', '#44ff66', player.id);
+    else this.notify(`${player.name} +1 Life!`, '#44ff66');
   }
 
   getPlayersView(): MPlayerView[] {
@@ -646,7 +647,8 @@ export class GameEngine {
 
   startKeyboardJamFor(player: MPlayer): void {
     player.jamUntil = this.now + C.JAM_DURATION;
-    this.notify(`${player.name}'s keyboard jammed!`, '#ff4444');
+    if (this.mode === 'competitive') this.notify('Keyboard Jammed!', '#ff4444', player.id);
+    else this.notify(`${player.name}'s keyboard jammed!`, '#ff4444');
   }
 
   startInputScramble(): void {
@@ -659,7 +661,8 @@ export class GameEngine {
   startInputScrambleFor(player: MPlayer): void {
     player.scrambleUntil = this.now + C.SCRAMBLE_DURATION;
     player.scrambleShift = Math.floor(Math.random() * 10) + 5;
-    this.notify(`${player.name}'s input scrambled!`, '#4488ff');
+    if (this.mode === 'competitive') this.notify('Input Scrambled!', '#4488ff', player.id);
+    else this.notify(`${player.name}'s input scrambled!`, '#4488ff');
   }
 
   scrambleChar(ch: string): string {
@@ -743,8 +746,8 @@ export class GameEngine {
     return list.filter((e) => e.frame < C.EXPLOSION_FRAMES);
   }
 
-  private notify(text: string, color: string): void {
-    this.notifications.push({ id: this.nextNotifId++, text, color, expiresAt: this.now + C.NOTIFICATION_DURATION });
+  private notify(text: string, color: string, ownerId: string | null = null): void {
+    this.notifications.push({ id: this.nextNotifId++, text, color, expiresAt: this.now + C.NOTIFICATION_DURATION, ownerId });
   }
 
   private endGame(): void {
