@@ -54,6 +54,7 @@ export const BOSS_CHILD_SPREAD = 0.15;
 
 export const ATTACK_TICKS = 10;
 export const LASER_TICKS = 14;
+export const LASER_FRAMES = 14;
 export const EXPLOSION_FRAMES = 12;
 export const EXPLOSION_TICKS_PER_FRAME = 3;
 export const SHAKE_TICKS = 20;

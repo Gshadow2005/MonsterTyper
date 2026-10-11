@@ -13,7 +13,7 @@ export class GameEngine {
     angle: 0,
     laserTicksLeft: 0,
     attackTicksLeft: 0,
-    shotId: 0,
+    laserFrame: 0,
     shakeTicksLeft: 0,
     recenterAt: null,
   };
@@ -79,7 +79,7 @@ export class GameEngine {
     this.notifications = [];
     this.flash = null;
     this.decks = createDecks();
-    this.shooter = { targetId: null, angle: 0, laserTicksLeft: 0, attackTicksLeft: 0, shotId: 0, shakeTicksLeft: 0, recenterAt: null };
+    this.shooter = { targetId: null, angle: 0, laserTicksLeft: 0, attackTicksLeft: 0, laserFrame: 0, shakeTicksLeft: 0, recenterAt: null };
     this.score = 0;
     this.lives = C.INITIAL_LIVES;
     this.streak = 0;
@@ -121,6 +121,7 @@ export class GameEngine {
 
     if (this.shooter.laserTicksLeft > 0) {
       this.shooter.laserTicksLeft -= 1;
+      this.shooter.laserFrame = (this.shooter.laserFrame + 1) % C.LASER_FRAMES;
     }
     if (this.shooter.attackTicksLeft > 0) {
       this.shooter.attackTicksLeft -= 1;
@@ -339,7 +340,7 @@ export class GameEngine {
     this.shooter.targetId = monster.id;
     this.shooter.laserTicksLeft = C.LASER_TICKS;
     this.shooter.attackTicksLeft = C.ATTACK_TICKS;
-    this.shooter.shotId += 1;
+    this.shooter.laserFrame = 0;
     this.shooter.recenterAt = null;
     sfx.gun.play();
     this.pendingHitId = monster.id;
