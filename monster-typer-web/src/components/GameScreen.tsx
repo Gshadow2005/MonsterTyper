@@ -132,6 +132,7 @@ export function GameScreen({
 
       <InputBar
         engine={engine}
+        snapshotClearSignal={snapshot.clearSignal}
         jammed={snapshot.jammed}
         scrambled={snapshot.scrambled}
         jamMsLeft={snapshot.jamMsLeft}

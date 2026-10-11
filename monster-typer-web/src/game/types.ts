@@ -2,6 +2,38 @@ export type PowerType = 'none' | 'jam' | 'reverse' | 'life' | 'boss';
 
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
+export type GameMode = 'coop' | 'competitive';
+
+export interface LobbyPlayer {
+  id: string;
+  name: string;
+  color: string;
+}
+
+export interface MPlayer extends LobbyPlayer {
+  score: number;
+  lives: number;
+  streak: number;
+  eliminated: boolean;
+  typedText: string;
+  jamUntil: number;
+  scrambleUntil: number;
+  scrambleShift: number;
+  clearSignal: number;
+}
+
+export interface MPlayerView extends LobbyPlayer {
+  score: number;
+  lives: number;
+  streak: number;
+  eliminated: boolean;
+  typedText: string;
+  jamMsLeft: number;
+  scrambleMsLeft: number;
+  scrambleShift: number;
+  clearSignal: number;
+}
+
 export interface Monster {
   id: number;
   relX: number;
@@ -67,6 +99,10 @@ export interface GameState {
   paused: boolean;
   gameOver: boolean;
   typedText: string;
+  clearSignal: number;
+  mode: GameMode | 'solo';
+  players: MPlayerView[];
+  winnerId: string | null;
 }
 
 export interface HudState {

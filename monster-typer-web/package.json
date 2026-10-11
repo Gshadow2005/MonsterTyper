@@ -17,6 +17,7 @@
     "vite": "^8.3.0"
   },
   "dependencies": {
+    "peerjs": "^1.5.5",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   }

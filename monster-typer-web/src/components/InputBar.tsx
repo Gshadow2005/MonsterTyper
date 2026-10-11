@@ -4,12 +4,14 @@ import { sfx } from '../game/sound';
 
 export function InputBar({
   engine,
+  snapshotClearSignal,
   jammed,
   scrambled,
   jamMsLeft,
   scrambleMsLeft,
 }: {
   engine: GameEngine;
+  snapshotClearSignal: number;
   jammed: boolean;
   scrambled: boolean;
   jamMsLeft: number;
@@ -19,13 +21,14 @@ export function InputBar({
   const inputRef = useRef<HTMLInputElement>(null);
   const jammedRef = useRef(jammed);
   jammedRef.current = jammed;
+  const lastClearRef = useRef(snapshotClearSignal);
 
   useEffect(() => {
-    if (engine.clearInputRequested) {
+    if (snapshotClearSignal !== lastClearRef.current) {
+      lastClearRef.current = snapshotClearSignal;
       setValue('');
-      engine.clearInputRequested = false;
     }
-  });
+  }, [snapshotClearSignal]);
 
   useEffect(() => {
     if (engine.gameOver) setValue('');

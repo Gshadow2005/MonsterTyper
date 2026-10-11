@@ -1,5 +1,5 @@
 import * as C from './constants';
-import type { Difficulty, Explosion, Flash, Monster, Notification, PowerType, ShooterState } from './types';
+import type { Difficulty, Explosion, Flash, GameMode, LobbyPlayer, Monster, MPlayer, MPlayerView, Notification, PowerType, ShooterState } from './types';
 import { createDecks, WordDeck } from './words';
 import { sfx } from './sound';
 
@@ -29,8 +29,11 @@ export class GameEngine {
   running = false;
   paused = false;
   gameOver = false;
-  clearInputRequested = false;
+  clearSignal = 0;
   typedText = '';
+  mode: GameMode | 'solo' = 'solo';
+  players: MPlayer[] = [];
+  winnerId: string | null = null;
 
   private now = 0;
   private nextId = 1;
@@ -41,9 +44,31 @@ export class GameEngine {
   private scrambleMap = new Map<string, string>();
   private clearInputAt: number | null = null;
   private decks: Record<Difficulty, WordDeck> = createDecks();
+  private pendingKillerId: string | null = null;
 
   start(): void {
     this.reset();
+    this.running = true;
+    this.spawnMonster();
+  }
+
+  startMultiplayer(gameMode: GameMode, roster: LobbyPlayer[]): void {
+    this.reset();
+    this.mode = gameMode;
+    this.players = roster.map((p) => ({
+      id: p.id,
+      name: p.name,
+      color: p.color,
+      score: 0,
+      lives: C.INITIAL_LIVES,
+      streak: 0,
+      eliminated: false,
+      typedText: '',
+      jamUntil: 0,
+      scrambleUntil: 0,
+      scrambleShift: 0,
+      clearSignal: 0,
+    }));
     this.running = true;
     this.spawnMonster();
   }
@@ -66,8 +91,12 @@ export class GameEngine {
     this.running = false;
     this.paused = false;
     this.gameOver = false;
-    this.clearInputRequested = false;
+    this.clearSignal += 1;
     this.typedText = '';
+    this.mode = 'solo';
+    this.players = [];
+    this.winnerId = null;
+    this.pendingKillerId = null;
     this.now = 0;
     this.frozenUntil = 0;
     this.jammedUntil = 0;
@@ -113,7 +142,7 @@ export class GameEngine {
     if (this.scrambled && this.now >= this.scrambledUntil) this.scrambled = false;
 
     if (this.clearInputAt !== null && this.now >= this.clearInputAt) {
-      this.clearInputRequested = true;
+      this.clearSignal += 1;
       this.clearInputAt = null;
     }
     this.notifications = this.notifications.filter((n) => this.now < n.expiresAt);
@@ -150,21 +179,55 @@ export class GameEngine {
   private checkBreaches(): void {
     const breached = this.monsters.filter((m) => m.relX <= C.BASE_THRESHOLD);
     if (breached.length === 0) return;
+    let worstLoss = 0;
     for (const m of breached) {
       const loss = m.health > 1 ? C.BOSS_BREACH_LIVES_PENALTY : 1;
-      this.lives = Math.max(0, this.lives - loss);
-      this.notify(`-${loss} Life!`, '#ff4444');
-      this.streak = 0;
+      worstLoss = Math.max(worstLoss, loss);
+      if (this.mode === 'competitive') {
+        for (const p of this.players) {
+          if (p.eliminated) continue;
+          p.lives = Math.max(0, p.lives - loss);
+          p.streak = 0;
+          if (p.lives === 0) {
+            p.eliminated = true;
+            this.notify(`${p.name} eliminated!`, p.color);
+          }
+        }
+      } else if (this.mode === 'coop') {
+        this.lives = Math.max(0, this.lives - loss);
+        for (const p of this.players) p.streak = 0;
+      } else {
+        this.lives = Math.max(0, this.lives - loss);
+        this.streak = 0;
+      }
     }
+    this.notify(`-${worstLoss} Life!`, '#ff4444');
     const breachedIds = new Set(breached.map((m) => m.id));
     this.monsters = this.monsters.filter((m) => !breachedIds.has(m.id));
-    if (this.lives <= 0) this.endGame();
+    this.checkEndCondition();
+  }
+
+  private checkEndCondition(): void {
+    if (this.mode === 'competitive') {
+      const standing = this.players.filter((p) => !p.eliminated);
+      if (standing.length === 0 || (standing.length === 1 && this.players.length > 1)) {
+        this.winnerId = standing[0]?.id ?? null;
+        this.endGame();
+      }
+    } else if (this.mode === 'coop') {
+      if (this.lives <= 0) this.endGame();
+    } else if (this.lives <= 0) {
+      this.endGame();
+    }
   }
 
   private maybeSpawn(): void {
-    if (this.monsters.length >= C.MAX_MONSTERS) return;
+    const standing = this.mode === 'solo' ? 1 : Math.max(1, this.players.filter((p) => !p.eliminated).length);
+    const cap = this.mode === 'solo' ? C.MAX_MONSTERS : Math.min(40, C.MAX_MONSTERS + 3 * (standing - 1));
+    if (this.monsters.length >= cap) return;
     const tuning = C.DIFFICULTY_TUNING[this.difficulty];
-    if (Math.random() * 100 < C.SPAWN_CHANCE * tuning.spawnRate) this.spawnMonster();
+    const scale = this.mode === 'solo' ? 1 : 1 + 0.35 * (standing - 1);
+    if (Math.random() * 100 < C.SPAWN_CHANCE * tuning.spawnRate * scale) this.spawnMonster();
   }
 
   private liveWords(): Set<string> {
@@ -247,9 +310,9 @@ export class GameEngine {
     const target = this.monsters.find((m) => m.word === text);
     if (target) {
       this.registerPerfectHit();
-      this.fire(target);
+      this.fire(target, null);
       this.typedText = '';
-      this.clearInputRequested = true;
+      this.clearSignal += 1;
       this.clearInputAt = null;
       return true;
     }
@@ -273,7 +336,7 @@ export class GameEngine {
     this.streak = 0;
   }
 
-  private fire(monster: Monster): void {
+  private fire(monster: Monster, killerId: string | null): void {
     this.shooter.targetId = monster.id;
     this.shooter.laserTicksLeft = C.LASER_TICKS;
     this.shooter.attackTicksLeft = C.ATTACK_TICKS;
@@ -281,6 +344,7 @@ export class GameEngine {
     this.shooter.recenterAt = null;
     sfx.gun.play();
     this.pendingHitId = monster.id;
+    this.pendingKillerId = killerId;
   }
 
   private pendingHitId: number | null = null;
@@ -288,12 +352,14 @@ export class GameEngine {
   private resolvePendingHit(): void {
     if (this.pendingHitId === null) return;
     const monster = this.monsters.find((m) => m.id === this.pendingHitId);
+    const killerId = this.pendingKillerId;
     this.pendingHitId = null;
-    if (monster) this.hitMonster(monster);
+    this.pendingKillerId = null;
+    if (monster) this.hitMonster(monster, killerId);
     this.shooter.recenterAt = this.now + C.SHOOTER_RECENTER_DELAY;
   }
 
-  private hitMonster(monster: Monster): void {
+  private hitMonster(monster: Monster, killerId: string | null): void {
     monster.health -= 1;
     monster.hitFlashTicks = C.HIT_FLASH_TICKS;
     this.shooter.shakeTicksLeft = C.SHAKE_TICKS;
@@ -307,15 +373,80 @@ export class GameEngine {
       return;
     }
 
+    const killer = killerId ? this.players.find((p) => p.id === killerId) ?? null : null;
+
     if (monster.power === 'boss') this.splitBoss(monster);
-    if (monster.power === 'jam') this.startKeyboardJam();
-    if (monster.power === 'life') this.increaseLife();
-    if (monster.power === 'reverse') this.startInputScramble();
+    if (monster.power === 'jam') {
+      if (killer) this.startKeyboardJamFor(killer);
+      else this.startKeyboardJam();
+    }
+    if (monster.power === 'life') {
+      if (killer) this.increaseLifeFor(killer);
+      else this.increaseLife();
+    }
+    if (monster.power === 'reverse') {
+      if (killer) this.startInputScrambleFor(killer);
+      else this.startInputScramble();
+    }
 
     this.addExplosion(monster.relX, monster.relY);
     this.monsters = this.monsters.filter((m) => m.id !== monster.id);
-    this.increaseScore();
-    this.clearInputRequested = true;
+    for (const p of this.players) {
+      if (p.typedText === monster.word) {
+        p.typedText = '';
+        p.clearSignal += 1;
+      }
+    }
+    if (killer) this.creditKill(killer);
+    else this.increaseScore();
+    this.clearSignal += 1;
+  }
+
+  private creditKill(player: MPlayer): void {
+    player.score += C.SCORE_PER_MONSTER;
+    player.streak += 1;
+    this.score += C.SCORE_PER_MONSTER;
+    this.speed = Math.min(C.MONSTER_MAX_SPEED, this.speed + C.SPEED_INCREASE_PER_KILL);
+    this.updateDifficulty();
+    if (player.streak >= C.PERFECT_HITS_FOR_POWERUP) {
+      player.streak = 0;
+      this.activateRandomPowerUp();
+    }
+  }
+
+  removePlayer(playerId: string): void {
+    const player = this.players.find((p) => p.id === playerId);
+    if (!player) return;
+    if (this.mode === 'competitive') {
+      if (!player.eliminated) {
+        player.eliminated = true;
+        this.notify(`${player.name} left the game`, player.color);
+      }
+    } else {
+      this.players = this.players.filter((p) => p.id !== playerId);
+      this.notify(`${player.name} left the game`, '#aaaaaa');
+    }
+    this.checkEndCondition();
+  }
+
+  checkInputFor(playerId: string, rawText: string): boolean {
+    if (!this.running || this.gameOver) return false;
+    const player = this.players.find((p) => p.id === playerId);
+    if (!player || player.eliminated) return false;
+    const text = rawText.trim().toLowerCase();
+    player.typedText = text;
+    if (!text) return false;
+
+    const target = this.monsters.find((m) => m.word === text);
+    if (target) {
+      this.fire(target, playerId);
+      player.typedText = '';
+      player.clearSignal += 1;
+      return true;
+    }
+    const isPartial = this.monsters.some((m) => m.word.startsWith(text));
+    if (!isPartial) player.streak = 0;
+    return false;
   }
 
   private splitBoss(boss: Monster): void {
@@ -357,6 +488,28 @@ export class GameEngine {
     this.notify('+1 Life!', '#44ff66');
   }
 
+  increaseLifeFor(player: MPlayer): void {
+    player.lives += 1;
+    this.notify(`${player.name} +1 Life!`, '#44ff66');
+  }
+
+  getPlayersView(): MPlayerView[] {
+    return this.players.map((p) => ({
+      id: p.id,
+      name: p.name,
+      color: p.color,
+      score: p.score,
+      lives: p.lives,
+      streak: p.streak,
+      eliminated: p.eliminated,
+      typedText: p.typedText,
+      jamMsLeft: Math.max(0, p.jamUntil - this.now),
+      scrambleMsLeft: Math.max(0, p.scrambleUntil - this.now),
+      scrambleShift: p.scrambleShift,
+      clearSignal: p.clearSignal,
+    }));
+  }
+
   private updateDifficulty(): void {
     let next: Difficulty = 'easy';
     if (this.score >= C.HARD_DIFFICULTY_THRESHOLD) next = 'hard';
@@ -373,8 +526,13 @@ export class GameEngine {
   startKeyboardJam(): void {
     this.jammedUntil = this.now + C.JAM_DURATION;
     this.jammed = true;
-    this.clearInputRequested = true;
+    this.clearSignal += 1;
     this.notify('Keyboard Jammed!', '#ff4444');
+  }
+
+  startKeyboardJamFor(player: MPlayer): void {
+    player.jamUntil = this.now + C.JAM_DURATION;
+    this.notify(`${player.name}'s keyboard jammed!`, '#ff4444');
   }
 
   startInputScramble(): void {
@@ -382,6 +540,12 @@ export class GameEngine {
     this.scrambled = true;
     this.scrambleMap = buildScrambleMap();
     this.notify('Input Scrambled!', '#4488ff');
+  }
+
+  startInputScrambleFor(player: MPlayer): void {
+    player.scrambleUntil = this.now + C.SCRAMBLE_DURATION;
+    player.scrambleShift = Math.floor(Math.random() * 10) + 5;
+    this.notify(`${player.name}'s input scrambled!`, '#4488ff');
   }
 
   scrambleChar(ch: string): string {

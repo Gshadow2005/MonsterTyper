@@ -48,7 +48,7 @@ export function useGameEngine() {
   return { engine, snapshot, best };
 }
 
-function makeSnapshot(engine: GameEngine): GameState {
+export function makeSnapshot(engine: GameEngine): GameState {
   return {
     monsters: [...engine.monsters],
     explosions: [...engine.explosions],
@@ -69,5 +69,9 @@ function makeSnapshot(engine: GameEngine): GameState {
     paused: engine.paused,
     gameOver: engine.gameOver,
     typedText: engine.typedText,
+    clearSignal: engine.clearSignal,
+    mode: engine.mode,
+    players: engine.getPlayersView(),
+    winnerId: engine.winnerId,
   };
 }
